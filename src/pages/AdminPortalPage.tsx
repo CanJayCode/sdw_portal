@@ -3,8 +3,8 @@ import axios from 'axios';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/auth';
 import { canPerformInClub, hasPermissionAnywhere } from '@/lib/permissions';
-import { createEvent, approveEvent, delistEvent, getClubEvents } from '@/features/events/api';
-import type { EventMode } from '@/types/api';
+import { createEvent, approveEvent, delistEvent, getClubEvents, updateEvent } from '@/features/events/api';
+import type { EventMode, EventSummary } from '@/types/api';
 import { Card, ErrorMessage, Spinner, StatusBadge } from '@/components/ui/Feedback';
 
 const initialForm = {
@@ -32,6 +32,7 @@ export function AdminPortalPage() {
   const memberships = auth?.memberships ?? [];
   const [clubId, setClubId] = useState(memberships[0]?.clubId ?? '');
   const [form, setForm] = useState(initialForm);
+  const [editingEvent, setEditingEvent] = useState<EventSummary | null>(null);
   const [message, setMessage] = useState('');
 
   const canCreate = clubId ? canPerformInClub(auth, clubId, 'CREATE_EVENT') : false;
@@ -78,6 +79,27 @@ export function AdminPortalPage() {
     },
   });
 
+  const updateMutation = useMutation({
+    mutationFn: () =>
+      updateEvent(clubId, editingEvent?._id ?? '', {
+        title: form.title,
+        description: form.description,
+        bannerUrl: form.bannerUrl,
+        venue: form.venue,
+        mode: form.mode,
+        startDate: new Date(form.startDate).toISOString(),
+        endDate: new Date(form.endDate).toISOString(),
+        registrationDeadline: new Date(form.registrationDeadline).toISOString(),
+        capacity: Number(form.capacity),
+      }),
+    onSuccess: () => {
+      setEditingEvent(null);
+      setForm(initialForm);
+      setMessage('Activity updated successfully.');
+      refreshEvents();
+    },
+  });
+
   const delistMutation = useMutation({
     mutationFn: (eventId: string) => delistEvent(clubId, eventId, 'Removed by club administrator.'),
     onSuccess: () => {
@@ -89,7 +111,32 @@ export function AdminPortalPage() {
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setMessage('');
-    createMutation.mutate();
+    if (editingEvent) {
+      updateMutation.mutate();
+    } else {
+      createMutation.mutate();
+    }
+  };
+
+  const startEditing = (event: EventSummary) => {
+    setEditingEvent(event);
+    setForm({
+      title: event.title,
+      description: event.description,
+      bannerUrl: event.bannerUrl,
+      venue: event.venue,
+      mode: event.mode,
+      startDate: new Date(event.startDate).toISOString().slice(0, 16),
+      endDate: new Date(event.endDate).toISOString().slice(0, 16),
+      registrationDeadline: new Date(event.registrationDeadline).toISOString().slice(0, 16),
+      capacity: String(event.capacity),
+    });
+    setMessage('');
+  };
+
+  const cancelEditing = () => {
+    setEditingEvent(null);
+    setForm(initialForm);
   };
 
   if (!hasPermissionAnywhere(auth, 'CREATE_EVENT') && !hasPermissionAnywhere(auth, 'EDIT_EVENT') && !canDelist) {
@@ -129,12 +176,16 @@ export function AdminPortalPage() {
 
       {message && <p className="rounded-md bg-green-50 px-4 py-3 text-sm text-green-700 dark:bg-green-950 dark:text-green-300">{message}</p>}
       {createMutation.isError && <ErrorMessage message={mutationErrorMessage(createMutation.error, 'The activity could not be created.')} />}
+      {updateMutation.isError && <ErrorMessage message={mutationErrorMessage(updateMutation.error, 'The activity could not be updated.')} />}
       {approveMutation.isError && <ErrorMessage message={mutationErrorMessage(approveMutation.error, 'The activity could not be approved.')} />}
       {delistMutation.isError && <ErrorMessage message={mutationErrorMessage(delistMutation.error, 'The activity could not be delisted.')} />}
 
       {canCreate && (
         <Card>
-          <h2 className="text-lg font-bold">Create an activity</h2>
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-lg font-bold">{editingEvent ? 'Edit activity' : 'Create an activity'}</h2>
+            {editingEvent && <button type="button" onClick={cancelEditing} className="text-sm text-gray-600 hover:underline dark:text-gray-300">Cancel</button>}
+          </div>
           <form onSubmit={submit} className="mt-4 grid gap-4 sm:grid-cols-2">
             <input required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Activity title" className="rounded-md border px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900" />
             <input required value={form.venue} onChange={(e) => setForm({ ...form, venue: e.target.value })} placeholder="Venue or meeting link" className="rounded-md border px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900" />
@@ -149,7 +200,7 @@ export function AdminPortalPage() {
             <label className="text-sm">Starts<input required type="datetime-local" value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })} className="mt-1 w-full rounded-md border px-3 py-2 dark:border-gray-700 dark:bg-gray-900" /></label>
             <label className="text-sm">Ends<input required type="datetime-local" value={form.endDate} onChange={(e) => setForm({ ...form, endDate: e.target.value })} className="mt-1 w-full rounded-md border px-3 py-2 dark:border-gray-700 dark:bg-gray-900" /></label>
             <label className="text-sm sm:col-span-2">Registration deadline<input required type="datetime-local" value={form.registrationDeadline} onChange={(e) => setForm({ ...form, registrationDeadline: e.target.value })} className="mt-1 w-full rounded-md border px-3 py-2 dark:border-gray-700 dark:bg-gray-900" /></label>
-            <button disabled={createMutation.isPending} className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50 sm:col-span-2">{createMutation.isPending ? 'Creating...' : 'Create activity'}</button>
+            <button disabled={createMutation.isPending || updateMutation.isPending} className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50 sm:col-span-2">{createMutation.isPending || updateMutation.isPending ? 'Saving...' : editingEvent ? 'Save changes' : 'Create activity'}</button>
           </form>
         </Card>
       )}
@@ -167,15 +218,13 @@ export function AdminPortalPage() {
               </div>
               <div className="flex items-center gap-3">
                 <StatusBadge status={event.status} />
+                {canApprove && <button onClick={() => startEditing(event)} className="rounded-md border border-brand-300 px-3 py-1.5 text-xs font-medium text-brand-700 hover:bg-brand-50 dark:border-brand-700 dark:text-brand-300 dark:hover:bg-brand-950">Edit</button>}
                 {canApprove && event.status === 'PENDING_APPROVAL' && <button onClick={() => approveMutation.mutate(event._id)} className="rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700">Approve</button>}
                 {canDelist && event.status === 'PUBLISHED' && <button onClick={() => delistMutation.mutate(event._id)} className="rounded-md border border-red-300 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950">Delist</button>}
               </div>
             </Card>
           ))}
         </div>
-        <p className="mt-4 text-xs text-gray-500 dark:text-gray-400">
-          Activity editing is not exposed by the current backend API. The portal supports the available create, approve, and delist workflow.
-        </p>
       </section>
     </div>
   );
