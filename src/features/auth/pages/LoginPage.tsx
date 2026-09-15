@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -62,8 +63,17 @@ export function LoginPage() {
         {mutation.isError && (
           <ErrorMessage
             message={
-              // @ts-expect-error - axios error shape
-              mutation.error?.response?.data?.message ?? 'Login failed'
+              axios.isAxiosError(mutation.error)
+                ? (mutation.error.response?.data?.message
+                    ? `${mutation.error.response.data.message}${
+                        Array.isArray(mutation.error.response.data.errors) && mutation.error.response.data.errors.length > 0
+                          ? `: ${mutation.error.response.data.errors.map((e: { message?: string }) => e.message).filter(Boolean).join(', ')}`
+                          : ''
+                      }`
+                    : mutation.error.code === 'ERR_NETWORK' || !mutation.error.response
+                      ? 'Unable to connect to the backend server. Please make sure the backend is running at http://localhost:5000.'
+                      : mutation.error.message)
+                : 'Login failed'
             }
           />
         )}

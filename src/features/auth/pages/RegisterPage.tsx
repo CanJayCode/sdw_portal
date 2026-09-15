@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -26,7 +27,12 @@ export function RegisterPage() {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<FormValues>({ resolver: zodResolver(schema) });
+  } = useForm<FormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      year: 'FE',
+    },
+  });
 
   const mutation = useMutation({
     mutationFn: registerStudent,
@@ -73,6 +79,7 @@ export function RegisterPage() {
             <option value="TE">TE</option>
             <option value="BE">BE</option>
           </select>
+          {errors.year && <p className="mt-1 text-xs text-red-600">{errors.year.message}</p>}
         </div>
 
         <div>
@@ -88,8 +95,17 @@ export function RegisterPage() {
         {mutation.isError && (
           <ErrorMessage
             message={
-              // @ts-expect-error - axios error shape
-              mutation.error?.response?.data?.message ?? 'Registration failed'
+              axios.isAxiosError(mutation.error)
+                ? (mutation.error.response?.data?.message
+                    ? `${mutation.error.response.data.message}${
+                        Array.isArray(mutation.error.response.data.errors) && mutation.error.response.data.errors.length > 0
+                          ? `: ${mutation.error.response.data.errors.map((e: { message?: string }) => e.message).filter(Boolean).join(', ')}`
+                          : ''
+                      }`
+                    : mutation.error.code === 'ERR_NETWORK' || !mutation.error.response
+                      ? 'Unable to connect to the backend server. Please make sure the backend is running at http://localhost:5000.'
+                      : mutation.error.message)
+                : 'Registration failed'
             }
           />
         )}
