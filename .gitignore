@@ -21,3 +21,6 @@ npm-debug.log*
 
 # Antigravity agent artifacts (local only, not shared)
 .antigravity/
+
+.vercel
+.env*
