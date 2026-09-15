@@ -31,8 +31,6 @@ export interface CreateEventPayload {
   autoPublish?: boolean;
 }
 
-export type UpdateEventPayload = CreateEventPayload;
-
 export const getEvents = (params: EventListParams = {}) =>
   api
     .get<ApiResponse<EventSummary[]>>('/events', { params })
@@ -48,9 +46,6 @@ export const getEventById = (eventId: string) =>
 
 export const createEvent = (clubId: string, payload: CreateEventPayload) =>
   api.post<ApiResponse<EventSummary>>(`/clubs/${clubId}/events`, payload).then((r) => r.data.data);
-
-export const updateEvent = (clubId: string, eventId: string, payload: UpdateEventPayload) =>
-  api.patch<ApiResponse<EventSummary>>(`/clubs/${clubId}/events/${eventId}`, payload).then((r) => r.data.data);
 
 export const approveEvent = (clubId: string, eventId: string) =>
   api
