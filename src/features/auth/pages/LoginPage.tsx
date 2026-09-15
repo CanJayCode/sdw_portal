@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation } from '@tanstack/react-query';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { login } from '../api';
 import { useAuthStore } from '@/store/auth';
 import { ErrorMessage } from '@/components/ui/Feedback';
@@ -17,6 +17,7 @@ type FormValues = z.infer<typeof schema>;
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const setSession = useAuthStore((s) => s.setSession);
 
   const {
@@ -29,7 +30,8 @@ export function LoginPage() {
     mutationFn: login,
     onSuccess: (data) => {
       setSession(data.user, data.auth, data.tokens.accessToken, data.tokens.refreshToken);
-      navigate('/');
+      const destination = (location.state?.from?.pathname as string | undefined) || '/dashboard';
+      navigate(destination);
     },
   });
 

@@ -36,6 +36,11 @@ export const getEvents = (params: EventListParams = {}) =>
     .get<ApiResponse<EventSummary[]>>('/events', { params })
     .then((r) => ({ events: r.data.data, meta: r.data.meta as PaginationMeta }));
 
+export const getClubEvents = (clubId: string, params: Omit<EventListParams, 'clubId'> = {}) =>
+  api
+    .get<ApiResponse<EventSummary[]>>(`/clubs/${clubId}/events`, { params })
+    .then((r) => ({ events: r.data.data, meta: r.data.meta as PaginationMeta }));
+
 export const getEventById = (eventId: string) =>
   api.get<ApiResponse<EventDetail>>(`/events/${eventId}`).then((r) => r.data.data);
 

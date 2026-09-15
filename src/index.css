@@ -2,7 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
+html {
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
 body {
+  margin: 0;
   font-family:
     ui-sans-serif,
     system-ui,
@@ -10,4 +19,47 @@ body {
     'Segoe UI',
     Roboto,
     sans-serif;
+  @apply bg-gray-50 text-gray-900 transition-colors;
+}
+
+html.dark body {
+  @apply bg-gray-950 text-gray-100;
+}
+
+html.dark .bg-white {
+  @apply bg-gray-900 text-gray-100;
+}
+
+html.dark .bg-gray-50 {
+  @apply bg-gray-800;
+}
+
+html.dark .bg-gray-100 {
+  @apply bg-gray-700;
+}
+
+html.dark .text-gray-900 {
+  @apply text-gray-100;
+}
+
+html.dark .text-gray-800 {
+  @apply text-gray-200;
+}
+
+html.dark .text-gray-700 {
+  @apply text-gray-300;
+}
+
+html.dark .text-gray-600 {
+  @apply text-gray-300;
+}
+
+html.dark .text-gray-500 {
+  @apply text-gray-400;
+}
+
+html.dark .border-gray-100,
+html.dark .border-gray-200,
+html.dark .border-gray-300 {
+  @apply border-gray-700;
 }

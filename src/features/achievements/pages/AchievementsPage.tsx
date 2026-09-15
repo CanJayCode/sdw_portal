@@ -70,8 +70,8 @@ export function AchievementsPage() {
       {/* Page Title & Subtitle */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Achievements Hub</h1>
-          <p className="mt-1 text-sm text-gray-600">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Achievements Hub</h1>
+          <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
             Submit accomplishments, track documentation verification, and earn points on the CESA Leaderboard.
           </p>
         </div>
@@ -88,19 +88,19 @@ export function AchievementsPage() {
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex border-b border-gray-200 overflow-x-auto">
+      <div className="flex overflow-x-auto border-b border-gray-200 dark:border-gray-700">
         <button
           type="button"
           onClick={() => setActiveTab('MY_ACHIEVEMENTS')}
           className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-semibold whitespace-nowrap transition-colors ${
             activeTab === 'MY_ACHIEVEMENTS'
               ? 'border-brand-600 text-brand-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
+              : 'border-transparent text-gray-500 hover:text-gray-300'
           }`}
         >
           <span>My Achievements</span>
           {data?.meta && (
-            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700">
+            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700 dark:bg-gray-700 dark:text-gray-100">
               {data.meta.total}
             </span>
           )}
@@ -112,7 +112,7 @@ export function AchievementsPage() {
           className={`border-b-2 px-4 py-2.5 text-sm font-semibold whitespace-nowrap transition-colors ${
             activeTab === 'SUBMIT'
               ? 'border-brand-600 text-brand-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
+              : 'border-transparent text-gray-500 hover:text-gray-300'
           }`}
         >
           Submit Achievement
@@ -124,7 +124,7 @@ export function AchievementsPage() {
           className={`border-b-2 px-4 py-2.5 text-sm font-semibold whitespace-nowrap transition-colors ${
             activeTab === 'GUEST_SUBMIT'
               ? 'border-brand-600 text-brand-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
+              : 'border-transparent text-gray-500 hover:text-gray-300'
           }`}
         >
           Guest Submission
@@ -137,7 +137,7 @@ export function AchievementsPage() {
             className={`flex items-center gap-1.5 border-b-2 px-4 py-2.5 text-sm font-semibold whitespace-nowrap transition-colors ${
               activeTab === 'REVIEW_QUEUE'
                 ? 'border-indigo-600 text-indigo-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
+                : 'border-transparent text-gray-500 hover:text-gray-300'
             }`}
           >
             <span className="h-2 w-2 rounded-full bg-indigo-500" />
@@ -160,16 +160,16 @@ export function AchievementsPage() {
       {activeTab === 'MY_ACHIEVEMENTS' && (
         <div className="space-y-4">
           {/* Filter Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white p-3 shadow-sm dark:border-gray-700 dark:bg-gray-900">
             <div className="flex items-center gap-3">
-              <label className="text-xs font-semibold text-gray-600">Filter Status:</label>
+              <label className="text-xs font-semibold text-gray-600 dark:text-gray-300">Filter Status:</label>
               <select
                 value={statusFilter}
                 onChange={(e) => {
                   setStatusFilter(e.target.value as AchievementStatus | '');
                   setPage(1);
                 }}
-                className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs text-gray-700 focus:border-brand-500 focus:outline-none"
+                className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs text-gray-700 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
               >
                 <option value="">All Statuses</option>
                 <option value="SUBMITTED">Submitted</option>
@@ -186,7 +186,7 @@ export function AchievementsPage() {
             <button
               type="button"
               onClick={() => refetch()}
-              className="rounded-lg border border-gray-300 px-2.5 py-1 text-xs text-gray-600 hover:bg-gray-50"
+              className="rounded-lg border border-gray-300 px-2.5 py-1 text-xs text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
             >
               ↻ Refresh
             </button>
@@ -198,9 +198,9 @@ export function AchievementsPage() {
           ) : isError ? (
             <ErrorMessage message="Failed to load your achievements. Please try again." />
           ) : data?.achievements.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-gray-300 bg-white p-12 text-center">
-              <p className="text-base font-semibold text-gray-800">No achievements found</p>
-              <p className="mt-1 text-xs text-gray-500">
+            <div className="rounded-xl border border-dashed border-gray-300 bg-white p-12 text-center dark:border-gray-700 dark:bg-gray-900">
+              <p className="text-base font-semibold text-gray-800 dark:text-gray-100">No achievements found</p>
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                 You haven&apos;t submitted any achievements matching this criteria yet.
               </p>
               <button
@@ -226,8 +226,8 @@ export function AchievementsPage() {
 
           {/* Pagination */}
           {data?.meta && data.meta.totalPages > 1 && (
-            <div className="flex items-center justify-between border-t border-gray-200 pt-3 text-xs">
-              <span className="text-gray-600">
+            <div className="flex items-center justify-between border-t border-gray-200 pt-3 text-xs dark:border-gray-700">
+              <span className="text-gray-600 dark:text-gray-300">
                 Page {data.meta.page} of {data.meta.totalPages} ({data.meta.total} total achievements)
               </span>
               <div className="flex items-center gap-2">
@@ -235,7 +235,7 @@ export function AchievementsPage() {
                   type="button"
                   disabled={!data.meta.hasPrevPage}
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  className="rounded border border-gray-300 px-3 py-1.5 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                  className="rounded border border-gray-300 px-3 py-1.5 text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
                 >
                   Previous
                 </button>
@@ -243,7 +243,7 @@ export function AchievementsPage() {
                   type="button"
                   disabled={!data.meta.hasNextPage}
                   onClick={() => setPage((p) => p + 1)}
-                  className="rounded border border-gray-300 px-3 py-1.5 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                  className="rounded border border-gray-300 px-3 py-1.5 text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
                 >
                   Next
                 </button>

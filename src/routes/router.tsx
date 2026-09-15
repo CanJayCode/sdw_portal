@@ -2,6 +2,7 @@ import { createBrowserRouter } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { HomePage } from '@/pages/HomePage';
+import { DashboardPage } from '@/pages/DashboardPage';
 import { NotFoundPage, UnauthorizedPage } from '@/pages/StatusPages';
 
 import { LoginPage } from '@/features/auth/pages/LoginPage';
@@ -19,6 +20,7 @@ import { LeaderboardPage } from '@/features/leaderboard/pages/LeaderboardPage';
 import { MembersPage } from '@/features/members/pages/MembersPage';
 import { NotificationsPage } from '@/features/notifications/pages/NotificationsPage';
 import { AuditLogsPage } from '@/features/audit-logs/pages/AuditLogsPage';
+import { AdminPortalPage } from '@/pages/AdminPortalPage';
 
 // -----------------------------------------------------------------------
 // NOTE FOR THE TEAM:
@@ -48,6 +50,8 @@ export const router = createBrowserRouter([
       {
         element: <ProtectedRoute />,
         children: [
+          { path: 'dashboard', element: <DashboardPage /> },
+          { path: 'admin', element: <AdminPortalPage /> },
           { path: 'profile', element: <ProfilePage /> },
           { path: 'achievements', element: <AchievementsPage /> },
           { path: 'members', element: <MembersPage /> },

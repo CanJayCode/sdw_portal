@@ -18,7 +18,13 @@ export function ErrorMessage({ message }: { message: string }) {
 }
 
 export function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return <div className={`rounded-lg border bg-white p-4 shadow-sm ${className}`}>{children}</div>;
+  return (
+    <div
+      className={`rounded-lg border bg-white p-4 text-gray-900 shadow-sm dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 ${className}`}
+    >
+      {children}
+    </div>
+  );
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -27,7 +33,7 @@ const STATUS_COLORS: Record<string, string> = {
   PENDING_APPROVAL: 'bg-yellow-100 text-yellow-700',
   PENDING_DOCUMENTATION_REVIEW: 'bg-yellow-100 text-yellow-700',
   PENDING_SECRETARY_APPROVAL: 'bg-yellow-100 text-yellow-700',
-  DRAFT: 'bg-gray-100 text-gray-700',
+  DRAFT: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-100',
   REJECTED: 'bg-red-100 text-red-700',
   REJECTED_BY_DOCUMENTATION: 'bg-red-100 text-red-700',
   REJECTED_BY_SECRETARY: 'bg-red-100 text-red-700',
@@ -37,7 +43,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export function StatusBadge({ status }: { status: string }) {
-  const colorClass = STATUS_COLORS[status] ?? 'bg-gray-100 text-gray-700';
+  const colorClass = STATUS_COLORS[status] ?? 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-100';
   return (
     <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${colorClass}`}>
       {status.replaceAll('_', ' ')}

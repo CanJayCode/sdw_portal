@@ -23,10 +23,10 @@ export function ClubListPage() {
                 {club.logoUrl && <img src={club.logoUrl} alt="" className="h-10 w-10 rounded-full" />}
                 <div>
                   <p className="font-semibold">{club.name}</p>
-                  <p className="text-xs text-gray-500">{club.code}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{club.code}</p>
                 </div>
               </div>
-              <p className="mt-2 line-clamp-2 text-sm text-gray-600">{club.description}</p>
+              <p className="mt-2 line-clamp-2 text-sm text-gray-600 dark:text-gray-300">{club.description}</p>
               {club.isCoordinator && (
                 <span className="mt-2 inline-block rounded-full bg-brand-100 px-2 py-0.5 text-xs text-brand-700">
                   CESA Coordinator

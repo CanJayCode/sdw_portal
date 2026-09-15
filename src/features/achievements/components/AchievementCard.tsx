@@ -38,7 +38,7 @@ export function AchievementCard({
               +{achievement.points} pts
             </span>
           </div>
-          <h3 className="mt-1 text-base font-bold text-gray-900">{achievement.title}</h3>
+          <h3 className="mt-1 text-base font-bold text-gray-900 dark:text-gray-100">{achievement.title}</h3>
         </div>
 
         <div>
@@ -46,12 +46,12 @@ export function AchievementCard({
         </div>
       </div>
 
-      <p className="mt-2 text-sm text-gray-600 line-clamp-2">{achievement.description}</p>
+      <p className="mt-2 line-clamp-2 text-sm text-gray-600 dark:text-gray-300">{achievement.description}</p>
 
       {/* Evidence Links */}
       {achievement.evidenceUrls && achievement.evidenceUrls.length > 0 && (
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <span className="text-xs font-medium text-gray-500">Evidence:</span>
+          <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Evidence:</span>
           {achievement.evidenceUrls.map((url, i) => (
             <a
               key={i}
@@ -94,7 +94,7 @@ export function AchievementCard({
       )}
 
       {/* Footer Actions */}
-      <div className="mt-4 flex items-center justify-between pt-3 border-t border-gray-100 text-xs text-gray-500">
+      <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-3 text-xs text-gray-500 dark:border-gray-700 dark:text-gray-400">
         <div>
           {achievement.createdAt && (
             <span>Submitted {new Date(achievement.createdAt).toLocaleDateString()}</span>
@@ -106,7 +106,7 @@ export function AchievementCard({
             <button
               type="button"
               onClick={() => onViewDetails(achievement)}
-              className="rounded px-2.5 py-1 font-medium text-gray-700 hover:bg-gray-100"
+              className="rounded px-2.5 py-1 font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
             >
               View Details
             </button>
