@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react';
 import axios from 'axios';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/auth';
-import { canPerformInClub, hasPermissionAnywhere } from '@/lib/permissions';
+import { canPerformInClub } from '@/lib/permissions';
 import { createEvent, approveEvent, delistEvent, getClubEvents } from '@/features/events/api';
 import type { EventMode } from '@/types/api';
 import { Card, ErrorMessage, Spinner, StatusBadge } from '@/components/ui/Feedback';
@@ -29,19 +29,24 @@ const mutationErrorMessage = (error: unknown, fallback: string) => {
 export function AdminPortalPage() {
   const { auth } = useAuthStore();
   const queryClient = useQueryClient();
-  const memberships = auth?.memberships ?? [];
+  const memberships = (auth?.memberships ?? []).filter((membership) =>
+    ['CREATE_EVENT', 'EDIT_EVENT', 'DELETE_EVENT_CESA'].some((permission) =>
+      canPerformInClub(auth, membership.clubId, permission)
+    )
+  );
   const [clubId, setClubId] = useState(memberships[0]?.clubId ?? '');
   const [form, setForm] = useState(initialForm);
   const [message, setMessage] = useState('');
 
   const canCreate = clubId ? canPerformInClub(auth, clubId, 'CREATE_EVENT') : false;
   const canApprove = clubId ? canPerformInClub(auth, clubId, 'EDIT_EVENT') : false;
-  const canDelist = hasPermissionAnywhere(auth, 'DELETE_EVENT_CESA');
+  const canDelist = clubId ? canPerformInClub(auth, clubId, 'DELETE_EVENT_CESA') : false;
+  const canManageSelectedClub = canCreate || canApprove || canDelist;
 
   const eventsQuery = useQuery({
     queryKey: ['admin', 'events', clubId],
     queryFn: () => getClubEvents(clubId, { limit: 50 }),
-    enabled: Boolean(clubId),
+    enabled: Boolean(clubId) && canManageSelectedClub,
   });
 
   const refreshEvents = () => {
@@ -92,7 +97,7 @@ export function AdminPortalPage() {
     createMutation.mutate();
   };
 
-  if (!hasPermissionAnywhere(auth, 'CREATE_EVENT') && !hasPermissionAnywhere(auth, 'EDIT_EVENT') && !canDelist) {
+  if (memberships.length === 0) {
     return (
       <Card>
         <h1 className="text-xl font-bold">Club management</h1>
@@ -175,6 +180,9 @@ export function AdminPortalPage() {
         </div>
         <p className="mt-4 rounded-md bg-amber-50 px-4 py-3 text-xs text-amber-800 dark:bg-amber-950 dark:text-amber-200">
           Editing is not available because the current backend does not expose an event update endpoint. Create, approve, and delist actions remain available.
+        </p>
+        <p className="mt-3 rounded-md bg-blue-50 px-4 py-3 text-xs text-blue-800 dark:bg-blue-950 dark:text-blue-200">
+          Attendee registration details will appear here after the backend provides a club-scoped registrations endpoint.
         </p>
       </section>
     </div>
