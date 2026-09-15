@@ -1,7 +1,9 @@
 import axios from 'axios';
 import { useAuthStore } from '@/store/auth';
 
-const baseURL = import.meta.env.VITE_API_BASE_URL as string;
+const baseURL =
+  (import.meta.env.VITE_API_BASE_URL as string | undefined) ||
+  'https://sdw-portal-backend.onrender.com/api/v1';
 
 export const api = axios.create({ baseURL });
 
