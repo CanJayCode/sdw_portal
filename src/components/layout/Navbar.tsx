@@ -3,11 +3,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth';
 import { hasPermissionAnywhere } from '@/lib/permissions';
 
-const NAV_LINKS = [
+const PUBLIC_NAV_LINKS = [
   { to: '/', label: 'Home' },
   { to: '/clubs', label: 'Clubs' },
   { to: '/events', label: 'Events' },
-  { to: '/achievements', label: 'Achievements' },
   { to: '/leaderboard', label: 'Leaderboard' },
 ];
 
@@ -37,6 +36,10 @@ export function Navbar() {
     navigate('/login');
   };
 
+  const navLinks = isAuthenticated
+    ? [...PUBLIC_NAV_LINKS, { to: '/achievements', label: 'Achievements' }]
+    : PUBLIC_NAV_LINKS;
+
   return (
     <nav className="border-b border-gray-200 bg-white transition-colors dark:border-gray-800 dark:bg-gray-900">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
@@ -48,7 +51,7 @@ export function Navbar() {
         </Link>
 
         <div className="hidden gap-6 md:flex">
-          {NAV_LINKS.map((link) => (
+          {navLinks.map((link) => (
             <Link
               key={link.to}
               to={link.to}
@@ -70,6 +73,9 @@ export function Navbar() {
 
           {isAuthenticated ? (
             <>
+              <Link to="/dashboard" className="text-sm font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400">
+                Dashboard
+              </Link>
               {(hasPermissionAnywhere(auth, 'CREATE_EVENT') ||
                 hasPermissionAnywhere(auth, 'EDIT_EVENT') ||
                 hasPermissionAnywhere(auth, 'DELETE_EVENT_CESA')) && (
