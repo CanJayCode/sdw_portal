@@ -22,9 +22,9 @@ export function LeaderboardPage() {
       <h1 className="text-2xl font-bold">Leaderboard</h1>
       {semester && <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">{semester.name}</p>}
 
-      <div className="overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-left text-xs uppercase text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+      <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900">
+        <table className="w-full min-w-[560px] text-sm">
+          <thead className="bg-gray-50/80 text-left text-xs uppercase tracking-wider text-gray-600 dark:bg-gray-800/80 dark:text-gray-300">
             <tr>
               <th className="px-4 py-2">Rank</th>
               <th className="px-4 py-2">Name</th>
@@ -34,7 +34,7 @@ export function LeaderboardPage() {
           </thead>
           <tbody>
             {data?.entries.map((entry) => (
-              <tr key={entry.user._id} className="border-t border-gray-200 dark:border-gray-700">
+              <tr key={entry.user._id} className="border-t border-gray-200 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800/60">
                 <td className="px-4 py-2 font-semibold text-gray-900 dark:text-gray-100">#{entry.rank}</td>
                 <td className="px-4 py-2 font-medium text-gray-900 dark:text-gray-100">{entry.user.name}</td>
                 <td className="px-4 py-2 text-gray-600 dark:text-gray-300">

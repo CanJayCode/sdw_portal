@@ -43,8 +43,8 @@ export function RegisterPage() {
   });
 
   return (
-    <div className="mx-auto mt-12 max-w-sm">
-      <h1 className="mb-6 text-2xl font-bold">Create your account</h1>
+    <div className="ui-card mx-auto mt-8 max-w-sm sm:mt-12">
+      <h1 className="mb-6 text-2xl font-bold tracking-tight">Create your account</h1>
 
       <form onSubmit={handleSubmit((v) => mutation.mutate(v))} className="space-y-4">
         <div>

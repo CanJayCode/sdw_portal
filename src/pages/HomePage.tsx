@@ -5,26 +5,28 @@ export function HomePage() {
   const { isAuthenticated, user } = useAuthStore();
 
   return (
-    <div className="mx-auto max-w-2xl py-12 text-center">
-      <h1 className="mb-2 text-3xl font-bold">CESA-SDW Portal</h1>
+    <div className="relative mx-auto max-w-3xl overflow-hidden py-20 text-center sm:py-28">
+      <div className="pointer-events-none absolute left-1/2 top-8 h-64 w-64 -translate-x-1/2 rounded-full bg-brand-500/10 blur-3xl" />
+      <p className="relative mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-brand-500">Campus activity, in one place</p>
+      <h1 className="relative mb-4 text-4xl font-bold tracking-tight text-gray-900 dark:text-gray-100 sm:text-5xl">CESA-SDW Portal</h1>
 
-      <p className="mb-6 text-gray-600 dark:text-gray-300">
+      <p className="relative mx-auto mb-8 max-w-xl text-base leading-7 text-gray-600 dark:text-gray-300 sm:text-lg">
         {isAuthenticated
           ? `Welcome back, ${user?.name}.`
           : 'Log in to register for events, track achievements, and view the leaderboard.'}
       </p>
 
-      <div className="flex justify-center gap-3">
+      <div className="relative flex flex-wrap justify-center gap-3">
         <Link
           to="/events"
-          className="rounded-md bg-brand-600 px-4 py-2 text-sm text-white hover:bg-brand-700"
+          className="ui-button-primary"
         >
           Browse Events
         </Link>
 
         <Link
           to="/leaderboard"
-          className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-900 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-100 dark:hover:bg-gray-800"
+          className="ui-button-secondary"
         >
           Leaderboard
         </Link>

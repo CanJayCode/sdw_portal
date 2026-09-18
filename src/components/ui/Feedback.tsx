@@ -20,7 +20,7 @@ export function ErrorMessage({ message }: { message: string }) {
 export function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
     <div
-      className={`rounded-lg border bg-white p-4 text-gray-900 shadow-sm dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 ${className}`}
+      className={`ui-card ${className}`}
     >
       {children}
     </div>
@@ -28,24 +28,24 @@ export function Card({ children, className = '' }: { children: React.ReactNode; 
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  PUBLISHED: 'bg-green-100 text-green-700',
-  AUTHENTICATED: 'bg-green-100 text-green-700',
-  PENDING_APPROVAL: 'bg-yellow-100 text-yellow-700',
-  PENDING_DOCUMENTATION_REVIEW: 'bg-yellow-100 text-yellow-700',
-  PENDING_SECRETARY_APPROVAL: 'bg-yellow-100 text-yellow-700',
-  DRAFT: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-100',
-  REJECTED: 'bg-red-100 text-red-700',
-  REJECTED_BY_DOCUMENTATION: 'bg-red-100 text-red-700',
-  REJECTED_BY_SECRETARY: 'bg-red-100 text-red-700',
-  DELISTED: 'bg-red-100 text-red-700',
-  CANCELLED: 'bg-red-100 text-red-700',
-  COMPLETED: 'bg-blue-100 text-blue-700',
+  PUBLISHED: 'bg-green-500/10 text-green-400 ring-1 ring-inset ring-green-500/20',
+  AUTHENTICATED: 'bg-green-500/10 text-green-400 ring-1 ring-inset ring-green-500/20',
+  PENDING_APPROVAL: 'bg-amber-500/10 text-amber-300 ring-1 ring-inset ring-amber-500/20',
+  PENDING_DOCUMENTATION_REVIEW: 'bg-amber-500/10 text-amber-300 ring-1 ring-inset ring-amber-500/20',
+  PENDING_SECRETARY_APPROVAL: 'bg-amber-500/10 text-amber-300 ring-1 ring-inset ring-amber-500/20',
+  DRAFT: 'bg-gray-500/10 text-gray-400 ring-1 ring-inset ring-gray-500/20',
+  REJECTED: 'bg-red-500/10 text-red-400 ring-1 ring-inset ring-red-500/20',
+  REJECTED_BY_DOCUMENTATION: 'bg-red-500/10 text-red-400 ring-1 ring-inset ring-red-500/20',
+  REJECTED_BY_SECRETARY: 'bg-red-500/10 text-red-400 ring-1 ring-inset ring-red-500/20',
+  DELISTED: 'bg-red-500/10 text-red-400 ring-1 ring-inset ring-red-500/20',
+  CANCELLED: 'bg-red-500/10 text-red-400 ring-1 ring-inset ring-red-500/20',
+  COMPLETED: 'bg-brand-500/10 text-brand-400 ring-1 ring-inset ring-brand-500/20',
 };
 
 export function StatusBadge({ status }: { status: string }) {
   const colorClass = STATUS_COLORS[status] ?? 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-100';
   return (
-    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${colorClass}`}>
+    <span className={`rounded-md px-2 py-1 text-xs font-medium ${colorClass}`}>
       {status.replaceAll('_', ' ')}
     </span>
   );

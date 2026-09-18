@@ -13,17 +13,18 @@ export function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      <section className="rounded-xl bg-brand-700 px-6 py-8 text-white shadow-sm">
-        <p className="text-sm font-medium text-brand-100">Student dashboard</p>
-        <h1 className="mt-2 text-3xl font-bold">Welcome back, {user?.name}.</h1>
-        <p className="mt-2 max-w-2xl text-brand-100">
+      <section className="relative overflow-hidden rounded-2xl border border-brand-500/20 bg-gradient-to-br from-brand-700/90 via-ink-700 to-ink-800 px-6 py-8 text-white shadow-lg shadow-brand-950/20">
+        <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-brand-500/20 blur-3xl" />
+        <p className="relative text-sm font-medium text-brand-100">Student dashboard</p>
+        <h1 className="relative mt-2 text-3xl font-bold tracking-tight">Welcome back, {user?.name}.</h1>
+        <p className="relative mt-2 max-w-2xl text-brand-100">
           Keep track of your clubs, discover upcoming activities, and build your achievement record.
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
-          <Link to="/events" className="rounded-md bg-white px-4 py-2 text-sm font-medium text-brand-700 hover:bg-brand-50">
+          <Link to="/events" className="relative rounded-lg bg-white px-4 py-2 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-50">
             Browse activities
           </Link>
-          <Link to="/achievements" className="rounded-md border border-brand-300 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600">
+          <Link to="/achievements" className="relative rounded-lg border border-white/20 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/10">
             Manage achievements
           </Link>
         </div>

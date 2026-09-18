@@ -160,7 +160,7 @@ export function AchievementsPage() {
       {activeTab === 'MY_ACHIEVEMENTS' && (
         <div className="space-y-4">
           {/* Filter Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white p-3 shadow-sm dark:border-gray-700 dark:bg-gray-900">
+          <div className="ui-card flex flex-wrap items-center justify-between gap-3 p-3">
             <div className="flex items-center gap-3">
               <label className="text-xs font-semibold text-gray-600 dark:text-gray-300">Filter Status:</label>
               <select
@@ -198,7 +198,7 @@ export function AchievementsPage() {
           ) : isError ? (
             <ErrorMessage message="Failed to load your achievements. Please try again." />
           ) : data?.achievements.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-gray-300 bg-white p-12 text-center dark:border-gray-700 dark:bg-gray-900">
+            <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-12 text-center dark:border-gray-700 dark:bg-gray-900">
               <p className="text-base font-semibold text-gray-800 dark:text-gray-100">No achievements found</p>
               <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                 You haven&apos;t submitted any achievements matching this criteria yet.

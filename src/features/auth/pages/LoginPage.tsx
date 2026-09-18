@@ -38,8 +38,8 @@ export function LoginPage() {
   const onSubmit = (values: FormValues) => mutation.mutate(values);
 
   return (
-    <div className="mx-auto mt-16 max-w-sm">
-      <h1 className="mb-6 text-2xl font-bold">Log in</h1>
+    <div className="ui-card mx-auto mt-12 max-w-sm sm:mt-16">
+      <h1 className="mb-6 text-2xl font-bold tracking-tight">Log in</h1>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
