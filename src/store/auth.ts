@@ -8,7 +8,9 @@ interface AuthState {
   accessToken: string | null;
   refreshToken: string | null;
   isAuthenticated: boolean;
+  isGuest: boolean;
   setSession: (user: User, auth: AuthInfo, accessToken: string, refreshToken: string) => void;
+  setGuestSession: () => void;
   setTokens: (accessToken: string, refreshToken: string) => void;
   logout: () => void;
 }
@@ -21,9 +23,32 @@ export const useAuthStore = create<AuthState>()(
       accessToken: null,
       refreshToken: null,
       isAuthenticated: false,
+      isGuest: false,
 
       setSession: (user, auth, accessToken, refreshToken) =>
-        set({ user, auth, accessToken, refreshToken, isAuthenticated: true }),
+        set({ user, auth, accessToken, refreshToken, isAuthenticated: true, isGuest: false }),
+
+      setGuestSession: () =>
+        set({
+          user: {
+            id: 'guest',
+            prn: 'GUEST',
+            email: 'guest@student.portal',
+            name: 'Guest User',
+            branch: 'General',
+            year: 'FE',
+            avatar: '',
+          },
+          auth: {
+            isCesaAdmin: false,
+            cesaRoles: [],
+            memberships: [],
+          },
+          accessToken: null,
+          refreshToken: null,
+          isAuthenticated: true,
+          isGuest: true,
+        }),
 
       setTokens: (accessToken, refreshToken) => set({ accessToken, refreshToken }),
 
@@ -34,6 +59,7 @@ export const useAuthStore = create<AuthState>()(
           accessToken: null,
           refreshToken: null,
           isAuthenticated: false,
+          isGuest: false,
         }),
     }),
     {

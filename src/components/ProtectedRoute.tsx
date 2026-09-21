@@ -9,22 +9,33 @@ interface ProtectedRouteProps {
   clubId?: string;
   /** Use instead of requiredPermission/clubId for routes only CESA admins can see. */
   requireCesaAdmin?: boolean;
+  /** If true, guest users cannot access this route. */
+  disallowGuest?: boolean;
 }
 
-export function ProtectedRoute({ requiredPermission, clubId, requireCesaAdmin }: ProtectedRouteProps) {
-  const { isAuthenticated, auth } = useAuthStore();
+export function ProtectedRoute({
+  requiredPermission,
+  clubId,
+  requireCesaAdmin,
+  disallowGuest,
+}: ProtectedRouteProps) {
+  const { isAuthenticated, isGuest, auth } = useAuthStore();
   const location = useLocation();
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
-  if (requireCesaAdmin && !isCesaAdmin(auth)) {
+  if (disallowGuest && isGuest) {
+    return <Navigate to="/login" replace state={{ from: location }} />;
+  }
+
+  if (requireCesaAdmin && (!auth || !isCesaAdmin(auth) || isGuest)) {
     return <Navigate to="/unauthorized" replace />;
   }
 
   if (requiredPermission && clubId) {
-    const allowed = canPerformInClub(auth, clubId, requiredPermission);
+    const allowed = !isGuest && canPerformInClub(auth, clubId, requiredPermission);
     if (!allowed) {
       return <Navigate to="/unauthorized" replace />;
     }

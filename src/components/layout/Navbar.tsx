@@ -3,22 +3,25 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth';
 import { hasPermissionAnywhere } from '@/lib/permissions';
 
-const PUBLIC_NAV_LINKS = [
+const GUEST_NAV_LINKS = [
   { to: '/', label: 'Home', icon: '🏠' },
   { to: '/clubs', label: 'Clubs', icon: '🏢' },
   { to: '/events', label: 'Events', icon: '📅' },
   { to: '/leaderboard', label: 'Leaderboard', icon: '🏆' },
+  { to: '/achievements', label: 'Achievements', icon: '⭐' },
 ];
 
-const MOBILE_NAV_LINKS = [
-  ...PUBLIC_NAV_LINKS,
+const AUTH_NAV_LINKS = [
+  { to: '/', label: 'Home', icon: '🏠' },
+  { to: '/clubs', label: 'Clubs', icon: '🏢' },
+  { to: '/events', label: 'Events', icon: '📅' },
+  { to: '/leaderboard', label: 'Leaderboard', icon: '🏆' },
   { to: '/achievements', label: 'Achievements', icon: '⭐' },
   { to: '/notifications', label: 'Alerts', icon: '🔔' },
-  { to: '/profile', label: 'Profile', icon: '👤' },
 ];
 
 export function Navbar() {
-  const { user, isAuthenticated, logout } = useAuthStore();
+  const { user, isAuthenticated, isGuest, logout } = useAuthStore();
   const auth = useAuthStore((s) => s.auth);
   const location = useLocation();
   const navigate = useNavigate();
@@ -73,12 +76,13 @@ export function Navbar() {
     navigate('/login');
   };
 
-  const navLinks = isAuthenticated ? MOBILE_NAV_LINKS : PUBLIC_NAV_LINKS;
+  const navLinks = isGuest ? GUEST_NAV_LINKS : AUTH_NAV_LINKS;
 
   const canAccessAdmin =
-    hasPermissionAnywhere(auth, 'CREATE_EVENT') ||
-    hasPermissionAnywhere(auth, 'EDIT_EVENT') ||
-    hasPermissionAnywhere(auth, 'DELETE_EVENT_CESA');
+    !isGuest &&
+    (hasPermissionAnywhere(auth, 'CREATE_EVENT') ||
+      hasPermissionAnywhere(auth, 'EDIT_EVENT') ||
+      hasPermissionAnywhere(auth, 'DELETE_EVENT_CESA'));
 
   const isActiveLink = (path: string) =>
     path === '/' ? location.pathname === '/' : location.pathname.startsWith(path);
@@ -119,7 +123,7 @@ export function Navbar() {
           <div className="flex shrink-0 items-center gap-2">
 
             {/* Theme */}
-          <button
+            <button
               type="button"
               onClick={() => setDarkMode((value) => !value)}
               aria-label="Toggle theme"
@@ -133,7 +137,20 @@ export function Navbar() {
 
             {/* Desktop auth controls */}
             <div className="hidden items-center gap-2 md:flex lg:gap-3">
-              {isAuthenticated ? (
+              {isGuest ? (
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+                    <span>👤</span> Guest Mode
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700"
+                  >
+                    Log In
+                  </button>
+                </div>
+              ) : isAuthenticated ? (
                 <>
                   <Link
                     to="/dashboard"
@@ -226,7 +243,7 @@ export function Navbar() {
 
             {/* Navigation */}
             <div className="flex flex-1 flex-col gap-1 overflow-y-auto p-4">
-              {MOBILE_NAV_LINKS.map((link) => (
+              {navLinks.map((link) => (
                 <Link
                   key={link.to}
                   to={link.to}
@@ -240,7 +257,21 @@ export function Navbar() {
 
               <div className="my-3 border-t border-gray-200 dark:border-gray-800" />
 
-              {isAuthenticated ? (
+              {isGuest ? (
+                <div className="flex flex-col gap-2 pt-2">
+                  <div className="flex items-center justify-between rounded-lg bg-amber-50 px-4 py-2.5 text-xs font-medium text-amber-800 dark:bg-amber-950/50 dark:text-amber-300">
+                    <span>Browsing as Guest</span>
+                    <span className="rounded-full bg-amber-200 px-2 py-0.5 font-bold text-amber-900 dark:bg-amber-800 dark:text-amber-100">Guest</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="mt-1 rounded-lg bg-brand-600 px-4 py-3 text-center text-sm font-medium text-white hover:bg-brand-700"
+                  >
+                    Log In / Register
+                  </button>
+                </div>
+              ) : isAuthenticated ? (
                 <>
                   <Link
                     to="/dashboard"

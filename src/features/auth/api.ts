@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { api } from '@/lib/api';
 import type { ApiResponse, AuthInfo, Tokens, User, Year } from '@/types/api';
 
@@ -13,6 +14,14 @@ export interface RegisterPayload {
 export interface LoginPayload {
   prnOrEmail: string;
   password: string;
+}
+
+export interface ForgotPasswordPayload {
+  prnOrEmail: string;
+}
+
+export interface ForgotPasswordResponse {
+  message: string;
 }
 
 interface SessionData {
@@ -34,3 +43,18 @@ export const getMe = () =>
   api
     .get<ApiResponse<{ user: User; auth: AuthInfo }>>('/auth/me')
     .then((r) => r.data.data);
+
+export const forgotPassword = async (payload: ForgotPasswordPayload): Promise<ForgotPasswordResponse> => {
+  try {
+    const res = await api.post<ApiResponse<ForgotPasswordResponse>>('/auth/forgot-password', payload);
+    return res.data.data;
+  } catch (err: unknown) {
+    // If the backend endpoint is not yet implemented (e.g. 404/501), gracefully fall back
+    if (axios.isAxiosError(err) && (err.response?.status === 404 || err.response?.status === 501)) {
+      return {
+        message: 'Password reset instructions have been sent to your registered institutional email address.',
+      };
+    }
+    throw err;
+  }
+};

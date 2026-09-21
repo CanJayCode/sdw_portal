@@ -1,12 +1,14 @@
-import { createBrowserRouter } from 'react-router-dom';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
+import { useAuthStore } from '@/store/auth';
 import { HomePage } from '@/pages/HomePage';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { NotFoundPage, UnauthorizedPage } from '@/pages/StatusPages';
 
 import { LoginPage } from '@/features/auth/pages/LoginPage';
 import { RegisterPage } from '@/features/auth/pages/RegisterPage';
+import { ForgotPasswordPage } from '@/features/auth/pages/ForgotPasswordPage';
 import { ProfilePage } from '@/features/auth/pages/ProfilePage';
 
 import { ClubListPage } from '@/features/clubs/pages/ClubListPage';
@@ -29,37 +31,54 @@ import { AdminPortalPage } from '@/pages/AdminPortalPage';
 // hunk — this keeps merge conflicts to a few lines instead of whole files.
 // -----------------------------------------------------------------------
 
+function RootRoute() {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+  return <HomePage />;
+}
+
 export const router = createBrowserRouter([
   {
     path: '/',
     element: <AppLayout />,
     children: [
-      { index: true, element: <HomePage /> },
+      // Unauthenticated auth & status routes (no navbar rendered)
       { path: 'login', element: <LoginPage /> },
       { path: 'register', element: <RegisterPage /> },
+      { path: 'forgot-password', element: <ForgotPasswordPage /> },
       { path: 'unauthorized', element: <UnauthorizedPage /> },
 
-      // Public / optional-auth routes
-      { path: 'clubs', element: <ClubListPage /> },
-      { path: 'clubs/:clubId', element: <ClubDetailPage /> },
-      { path: 'events', element: <EventListPage /> },
-      { path: 'events/:eventId', element: <EventDetailPage /> },
-      { path: 'leaderboard', element: <LeaderboardPage /> },
+      // Root entry point: opens login if not authenticated; opens home if logged in/guest
+      { index: true, element: <RootRoute /> },
 
-      // Authenticated-only routes
+      // Portal routes accessible after login or in guest mode
       {
         element: <ProtectedRoute />,
         children: [
+          { path: 'clubs', element: <ClubListPage /> },
+          { path: 'clubs/:clubId', element: <ClubDetailPage /> },
+          { path: 'events', element: <EventListPage /> },
+          { path: 'events/:eventId', element: <EventDetailPage /> },
+          { path: 'leaderboard', element: <LeaderboardPage /> },
           { path: 'dashboard', element: <DashboardPage /> },
-          { path: 'admin', element: <AdminPortalPage /> },
-          { path: 'profile', element: <ProfilePage /> },
           { path: 'achievements', element: <AchievementsPage /> },
+          { path: 'admin', element: <AdminPortalPage /> },
+        ],
+      },
+
+      // Registered student only routes (guests redirected to login)
+      {
+        element: <ProtectedRoute disallowGuest />,
+        children: [
+          { path: 'profile', element: <ProfilePage /> },
           { path: 'members', element: <MembersPage /> },
           { path: 'notifications', element: <NotificationsPage /> },
         ],
       },
 
-      // CESA-admin-only routes (example of a permission-gated route)
+      // CESA-admin-only routes (permission-gated)
       {
         element: <ProtectedRoute requireCesaAdmin />,
         children: [{ path: 'audit-logs', element: <AuditLogsPage /> }],
