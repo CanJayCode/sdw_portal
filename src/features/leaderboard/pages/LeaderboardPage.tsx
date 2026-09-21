@@ -1,8 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { getCurrentSemester, getLeaderboard } from '../api';
 import { ErrorMessage, Spinner } from '@/components/ui/Feedback';
+import { useAuthStore } from '@/store/auth';
 
 export function LeaderboardPage() {
+  const currentUser = useAuthStore((state) => state.user);
   const { data: semester } = useQuery({
     queryKey: ['semesters', 'current'],
     queryFn: getCurrentSemester,
@@ -34,7 +36,7 @@ export function LeaderboardPage() {
           </thead>
           <tbody>
             {data?.entries.map((entry) => (
-              <tr key={entry.user._id} className="border-t border-gray-200 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800/60">
+              <tr key={entry.user._id} className={`border-t border-gray-200 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800/60 ${currentUser?.prn === entry.user.prn ? 'bg-brand-500/10' : ''}`}>
                 <td className="px-4 py-2 font-semibold text-gray-900 dark:text-gray-100">#{entry.rank}</td>
                 <td className="px-4 py-2 font-medium text-gray-900 dark:text-gray-100">{entry.user.name}</td>
                 <td className="px-4 py-2 text-gray-600 dark:text-gray-300">

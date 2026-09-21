@@ -121,6 +121,7 @@ export interface Club {
 export interface EventSummary {
   _id: string;
   title: string;
+  category?: string;
   description: string;
   bannerUrl: string;
   venue: string;

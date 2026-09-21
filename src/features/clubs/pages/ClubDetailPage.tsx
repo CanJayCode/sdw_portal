@@ -2,6 +2,7 @@ import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { getClubById } from '../api';
 import { Card, ErrorMessage, Spinner } from '@/components/ui/Feedback';
+import { ClubLogo } from '@/components/ui/ClubLogo';
 
 export function ClubDetailPage() {
   const { clubId } = useParams<{ clubId: string }>();
@@ -20,7 +21,7 @@ export function ClubDetailPage() {
   return (
     <div className="mx-auto max-w-2xl">
       <div className="mb-4 flex items-center gap-4">
-        {club.logoUrl && <img src={club.logoUrl} alt="" className="h-16 w-16 rounded-full" />}
+        <ClubLogo club={club} size="lg" />
         <div>
           <h1 className="text-2xl font-bold">{club.name}</h1>
           <p className="text-sm text-gray-500">{club.code}</p>

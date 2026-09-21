@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth';
 import { getEvents } from '@/features/events/api';
 import { Card, ErrorMessage, Spinner, StatusBadge } from '@/components/ui/Feedback';
+import { ClubLogo } from '@/components/ui/ClubLogo';
 
 export function DashboardPage() {
   const { user, auth } = useAuthStore();
@@ -41,8 +42,13 @@ export function DashboardPage() {
           <div className="grid gap-4 sm:grid-cols-2">
             {auth.memberships.map((membership) => (
               <Card key={membership.clubId}>
-                <p className="font-semibold">{membership.clubName}</p>
-                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{membership.clubCode}</p>
+                <div className="flex items-center gap-3">
+                  <ClubLogo club={{ code: membership.clubCode, name: membership.clubName }} />
+                  <div>
+                    <p className="font-semibold">{membership.clubName}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{membership.clubCode}</p>
+                  </div>
+                </div>
                 <p className="mt-3 text-sm text-gray-600 dark:text-gray-300">
                   {membership.roles.map((role) => role.name).join(', ') || 'Member'}
                 </p>
@@ -71,7 +77,7 @@ export function DashboardPage() {
             <Link key={event._id} to={`/events/${event._id}`}>
               <Card className="h-full hover:border-brand-400">
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-xs text-gray-500 dark:text-gray-400">{event.clubId.code}</p>
+                  <p className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400"><ClubLogo club={event.clubId} size="sm" />{event.clubId.code}</p>
                   <StatusBadge status={event.status} />
                 </div>
                 <p className="mt-3 font-semibold">{event.title}</p>

@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { cancelRegistration, getEventById, registerForEvent } from '../api';
 import { Card, ErrorMessage, Spinner, StatusBadge } from '@/components/ui/Feedback';
 import { useAuthStore } from '@/store/auth';
+import { ClubLogo } from '@/components/ui/ClubLogo';
 
 export function EventDetailPage() {
   const { eventId } = useParams<{ eventId: string }>();
@@ -38,7 +39,7 @@ export function EventDetailPage() {
       )}
 
       <div className="mb-2 flex items-center justify-between">
-        <span className="text-sm text-gray-500">{event.clubId.name}</span>
+        <span className="flex items-center gap-2 text-sm text-gray-500"><ClubLogo club={event.clubId} size="sm" />{event.clubId.name}</span>
         <StatusBadge status={event.status} />
       </div>
 

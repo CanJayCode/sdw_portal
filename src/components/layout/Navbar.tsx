@@ -13,6 +13,8 @@ const PUBLIC_NAV_LINKS = [
 const MOBILE_NAV_LINKS = [
   ...PUBLIC_NAV_LINKS,
   { to: '/achievements', label: 'Achievements', icon: '⭐' },
+  { to: '/notifications', label: 'Alerts', icon: '🔔' },
+  { to: '/profile', label: 'Profile', icon: '👤' },
 ];
 
 export function Navbar() {
@@ -22,7 +24,7 @@ export function Navbar() {
   const navigate = useNavigate();
 
   const [darkMode, setDarkMode] = useState(
-    () => localStorage.getItem('theme') === 'dark'
+    () => localStorage.getItem('theme') !== 'light'
   );
 
   const [menuOpen, setMenuOpen] = useState(false);

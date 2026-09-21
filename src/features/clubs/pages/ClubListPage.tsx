@@ -1,9 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getClubs } from '../api';
 import { Card, ErrorMessage, Spinner } from '@/components/ui/Feedback';
+import { ClubLogo } from '@/components/ui/ClubLogo';
 
 export function ClubListPage() {
+  const [search, setSearch] = useState('');
   const { data: clubs, isLoading, isError } = useQuery({
     queryKey: ['clubs'],
     queryFn: getClubs,
@@ -12,15 +15,28 @@ export function ClubListPage() {
   if (isLoading) return <Spinner />;
   if (isError) return <ErrorMessage message="Failed to load clubs." />;
 
+  const filteredClubs = clubs?.filter((club) =>
+    `${club.name} ${club.code} ${club.description}`.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
     <div>
-      <h1 className="mb-4 text-2xl font-bold">Clubs</h1>
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-2xl font-bold">Clubs</h1>
+        <input
+          aria-label="Search clubs"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Search clubs"
+          className="w-full max-w-xs px-3 py-2 text-sm"
+        />
+      </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {clubs?.map((club) => (
+        {filteredClubs?.map((club) => (
           <Link key={club._id} to={`/clubs/${club._id}`}>
             <Card className="h-full hover:border-brand-400">
               <div className="flex items-center gap-3">
-                {club.logoUrl && <img src={club.logoUrl} alt="" className="h-10 w-10 rounded-full" />}
+                <ClubLogo club={club} />
                 <div>
                   <p className="font-semibold">{club.name}</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">{club.code}</p>
@@ -36,8 +52,7 @@ export function ClubListPage() {
           </Link>
         ))}
       </div>
-
-      {/* TODO (owner of this module): add empty state, search/filter if needed */}
+      {filteredClubs?.length === 0 && <p className="mt-6 text-sm text-gray-500">No clubs match your search.</p>}
     </div>
   );
 }
