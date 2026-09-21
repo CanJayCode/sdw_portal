@@ -121,12 +121,13 @@ export function Navbar() {
           <Link
             to="/"
             onClick={() => setMenuOpen(false)}
-            className="flex shrink-0 items-center gap-2 text-base font-bold tracking-tight text-gray-900 dark:text-gray-100 sm:text-lg"
+            className="flex shrink-0 items-center rounded-md bg-white px-1.5 py-1 transition-colors dark:bg-transparent"
           >
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-white font-extrabold text-sm shadow-sm">
-              SDW
-            </span>
-            <span className="whitespace-nowrap">CESA-SDW Portal</span>
+            <img
+              src="/image/Pccoe%20Logos.png"
+              alt="CESA Student Association"
+              className="h-10 w-[138px] object-contain dark:invert dark:mix-blend-screen"
+            />
           </Link>
 
           {/* Desktop navigation */}
@@ -259,11 +260,12 @@ export function Navbar() {
 
             {/* Panel header */}
             <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4 dark:border-gray-800">
-              <span className="flex items-center gap-2 font-bold text-brand-600">
-                <span className="flex h-6 w-6 items-center justify-center rounded bg-brand-600 text-white font-extrabold text-xs">
-                  SDW
-                </span>
-                <span>CESA-SDW Portal</span>
+              <span className="rounded-md bg-white px-1 py-1 dark:bg-transparent">
+                <img
+                  src="/image/Pccoe%20Logos.png"
+                  alt="CESA Student Association"
+                  className="h-9 w-[122px] object-contain dark:invert dark:mix-blend-screen"
+                />
               </span>
 
               <button
