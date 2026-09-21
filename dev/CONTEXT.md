@@ -66,7 +66,17 @@ Guest Mode allows prospective students, visitors, or non-logged-in users to expl
   - Communicates with `forgotPassword({ prnOrEmail })` in [`src/features/auth/api.ts`](file:///home/rudy/Projects/sdw_portal/src/features/auth/api.ts).
   - Displays institutional confirmation details (15-minute token validity, institutional mailbox guidance, CESA support contact).
 
-### 2.4 Route Protection Matrix
+### 2.4 Incorrect Password & Login Failure Handling
+- **Axios Interceptor Guard**: The Axios response interceptor in [`src/lib/api.ts`](file:///home/rudy/Projects/sdw_portal/src/lib/api.ts) ignores 401s on `/auth/login` and `/auth/register`, avoiding page-reloading token refresh routines on failed logins.
+- **Visual Feedback**: When an incorrect password or invalid credentials error is returned:
+  - An alert banner displays `"wrong password entered"` in red (`text-red-600 font-semibold`).
+  - The password input is highlighted with a red border (`border-red-500`).
+  - A red subtext message directly below the password input displays `"wrong password entered"`.
+  - The password field is reset and refocused.
+  - The user is redirected to `/login` via `navigate('/login', { replace: true })`.
+  - Error messages automatically clear as soon as the user starts typing in the password field.
+
+### 2.5 Route Protection Matrix
 The following table defines the route guard rules enforced in [`src/routes/router.tsx`](file:///home/rudy/Projects/sdw_portal/src/routes/router.tsx):
 
 | Route | Component | Access Guard |

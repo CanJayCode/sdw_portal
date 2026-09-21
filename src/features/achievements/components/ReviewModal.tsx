@@ -8,6 +8,7 @@ import {
   reviewAchievement,
 } from '../api';
 import type { Achievement } from '../types';
+import { XIcon } from '@/components/ui/Icons';
 
 export type ReviewModalType =
   | 'DOC_REVIEW'
@@ -172,9 +173,9 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
               resetForm();
               onClose();
             }}
-            className="text-gray-400 hover:text-gray-600 text-lg"
+            className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
           >
-            ✕
+            <XIcon className="h-5 w-5" />
           </button>
         </div>
 

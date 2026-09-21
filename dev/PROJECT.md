@@ -23,9 +23,10 @@ The **CESA-SDW Portal** is a production-grade web application built with **React
 
 ```
 sdw_portal/
-├── dev/                                    # Developer and AI agent documentation
+├── dev/                                    # Developer, agent docs, and reference lists
 │   ├── CONTEXT.md                          # Agent-friendly system context, execution rules, and domain guide
-│   └── PROJECT.md                          # Codebase structure, file catalog, and functionality index
+│   ├── PROJECT.md                          # Codebase structure, file catalog, and functionality index
+│   └── PRN_list.csv                        # Combined student PRN list from SY_A-D and TY_rollcall PDFs
 ├── docs/                                   # Backend integration specifications
 │   └── api.md                              # Complete REST API specification (v2.1)
 ├── public/                                 # Static assets served as-is
@@ -192,7 +193,7 @@ sdw_portal/
 | File | Purpose & Functionality |
 | :--- | :--- |
 | [`src/features/auth/api.ts`](file:///home/rudy/Projects/sdw_portal/src/features/auth/api.ts) | HTTP integration for authentication endpoints: `login`, `registerStudent`, `logout`, `getMe`, and `forgotPassword`. |
-| [`src/features/auth/pages/LoginPage.tsx`](file:///home/rudy/Projects/sdw_portal/src/features/auth/pages/LoginPage.tsx) | Login view. Validates PRN or Email and Password using React Hook Form + Zod. Provides one-click **"Continue as Guest"** mode, a link to **"Forgot password?"**, and redirect handling. |
+| [`src/features/auth/pages/LoginPage.tsx`](file:///home/rudy/Projects/sdw_portal/src/features/auth/pages/LoginPage.tsx) | Login view. Validates PRN or Email and Password using React Hook Form + Zod. Provides one-click **"Continue as Guest"** mode, **"Forgot password?"** link, red `"wrong password entered"` error display with input highlighting, automatic field reset, and redirect handling. |
 | [`src/features/auth/pages/RegisterPage.tsx`](file:///home/rudy/Projects/sdw_portal/src/features/auth/pages/RegisterPage.tsx) | Student registration view. Collects full name, PRN, institutional email, branch, academic year (FE/SE/TE/BE), and password. Automatically creates session upon success. |
 | [`src/features/auth/pages/ForgotPasswordPage.tsx`](file:///home/rudy/Projects/sdw_portal/src/features/auth/pages/ForgotPasswordPage.tsx) | Institutional password reset view. Takes student PRN or institutional email, communicates with backend, and displays clear instructions, validity limits, and college support contacts. |
 | [`src/features/auth/pages/ProfilePage.tsx`](file:///home/rudy/Projects/sdw_portal/src/features/auth/pages/ProfilePage.tsx) | User profile screen. Shows student academic record, club affiliations, roles (coordinator/member), account actions, and logout button. |

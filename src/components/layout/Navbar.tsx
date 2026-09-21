@@ -1,23 +1,45 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth';
 import { hasPermissionAnywhere } from '@/lib/permissions';
+import {
+  HomeIcon,
+  BuildingIcon,
+  CalendarIcon,
+  TrophyIcon,
+  StarIcon,
+  BellIcon,
+  SunIcon,
+  MoonIcon,
+  UserIcon,
+  MenuIcon,
+  XIcon,
+  DashboardIcon,
+  GearIcon,
+  LogoutIcon,
+} from '@/components/ui/Icons';
 
-const GUEST_NAV_LINKS = [
-  { to: '/', label: 'Home', icon: '🏠' },
-  { to: '/clubs', label: 'Clubs', icon: '🏢' },
-  { to: '/events', label: 'Events', icon: '📅' },
-  { to: '/leaderboard', label: 'Leaderboard', icon: '🏆' },
-  { to: '/achievements', label: 'Achievements', icon: '⭐' },
+interface NavLinkItem {
+  to: string;
+  label: string;
+  icon: ReactNode;
+}
+
+const GUEST_NAV_LINKS: NavLinkItem[] = [
+  { to: '/', label: 'Home', icon: <HomeIcon className="h-4 w-4" /> },
+  { to: '/clubs', label: 'Clubs', icon: <BuildingIcon className="h-4 w-4" /> },
+  { to: '/events', label: 'Events', icon: <CalendarIcon className="h-4 w-4" /> },
+  { to: '/leaderboard', label: 'Leaderboard', icon: <TrophyIcon className="h-4 w-4" /> },
+  { to: '/achievements', label: 'Achievements', icon: <StarIcon className="h-4 w-4" /> },
 ];
 
-const AUTH_NAV_LINKS = [
-  { to: '/', label: 'Home', icon: '🏠' },
-  { to: '/clubs', label: 'Clubs', icon: '🏢' },
-  { to: '/events', label: 'Events', icon: '📅' },
-  { to: '/leaderboard', label: 'Leaderboard', icon: '🏆' },
-  { to: '/achievements', label: 'Achievements', icon: '⭐' },
-  { to: '/notifications', label: 'Alerts', icon: '🔔' },
+const AUTH_NAV_LINKS: NavLinkItem[] = [
+  { to: '/', label: 'Home', icon: <HomeIcon className="h-4 w-4" /> },
+  { to: '/clubs', label: 'Clubs', icon: <BuildingIcon className="h-4 w-4" /> },
+  { to: '/events', label: 'Events', icon: <CalendarIcon className="h-4 w-4" /> },
+  { to: '/leaderboard', label: 'Leaderboard', icon: <TrophyIcon className="h-4 w-4" /> },
+  { to: '/achievements', label: 'Achievements', icon: <StarIcon className="h-4 w-4" /> },
+  { to: '/notifications', label: 'Alerts', icon: <BellIcon className="h-4 w-4" /> },
 ];
 
 export function Navbar() {
@@ -80,7 +102,10 @@ export function Navbar() {
 
   const canAccessAdmin =
     !isGuest &&
-    (hasPermissionAnywhere(auth, 'CREATE_EVENT') ||
+    (user?.isMasterAdmin === true ||
+      hasPermissionAnywhere(auth, 'EDIT_CLUB') ||
+      hasPermissionAnywhere(auth, 'EDIT_CLUB_MEMBERS') ||
+      hasPermissionAnywhere(auth, 'CREATE_EVENT') ||
       hasPermissionAnywhere(auth, 'EDIT_EVENT') ||
       hasPermissionAnywhere(auth, 'DELETE_EVENT_CESA'));
 
@@ -90,57 +115,60 @@ export function Navbar() {
   return (
     <>
       <nav className="relative z-50 border-b border-gray-200 bg-white/85 shadow-sm backdrop-blur-xl transition-colors dark:border-gray-800 dark:bg-gray-900/80 md:sticky md:top-0 md:mx-3 md:mt-3 md:rounded-2xl md:border md:shadow-lg">
-        <div className="mx-auto flex min-h-[64px] w-full max-w-6xl items-center justify-between gap-2 overflow-hidden px-4 py-3 sm:gap-3 md:px-5 lg:px-6">
+        <div className="mx-auto flex min-h-[64px] w-full max-w-7xl items-center gap-2 overflow-hidden px-4 py-3 sm:gap-3 md:px-5 lg:gap-4 lg:px-6">
 
           {/* Logo */}
           <Link
             to="/"
             onClick={() => setMenuOpen(false)}
-            className="min-w-0 truncate text-base font-bold tracking-tight text-gray-900 dark:text-gray-100 sm:text-lg"
+            className="flex shrink-0 items-center gap-2 text-base font-bold tracking-tight text-gray-900 dark:text-gray-100 sm:text-lg"
           >
-            CESA-SDW Portal
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-white font-extrabold text-sm shadow-sm">
+              SDW
+            </span>
+            <span className="whitespace-nowrap">CESA-SDW Portal</span>
           </Link>
 
           {/* Desktop navigation */}
-          <div className="hidden min-w-0 items-center gap-1 md:flex lg:gap-3">
+          <div className="hidden min-w-0 flex-1 items-center justify-center gap-0.5 md:flex lg:gap-1">
             {navLinks.map((link) => (
               <Link
                 key={link.to}
                 to={link.to}
                 aria-current={isActiveLink(link.to) ? 'page' : undefined}
-                className={`whitespace-nowrap rounded-md px-2 py-2 text-sm transition-colors lg:px-3 ${
+                className={`flex shrink-0 items-center whitespace-nowrap rounded-md px-2 py-2 text-sm transition-colors lg:px-2.5 ${
                   isActiveLink(link.to)
                     ? 'bg-brand-50 font-medium text-brand-700 dark:bg-gray-800 dark:text-brand-300'
                     : 'text-gray-700 hover:bg-gray-50 hover:text-brand-600 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-brand-400'
                 }`}
               >
-                {link.label}
+                <span className="hidden">{link.icon}</span>
+                <span>{link.label}</span>
               </Link>
             ))}
           </div>
 
           {/* Right side */}
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex shrink-0 items-center gap-1.5 lg:gap-2">
 
             {/* Theme */}
             <button
               type="button"
               onClick={() => setDarkMode((value) => !value)}
               aria-label="Toggle theme"
-              className="rounded-md border border-gray-300 px-2.5 py-1.5 text-sm text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800 sm:px-3"
+              className="flex h-9 w-9 items-center justify-center rounded-md border border-gray-300 text-sm text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
             >
-              {darkMode ? '☀️' : '🌙'}
-              <span className="hidden lg:inline">
-                {darkMode ? ' Light' : ' Dark'}
-              </span>
+              {darkMode ? <SunIcon className="h-4 w-4 text-amber-500" /> : <MoonIcon className="h-4 w-4 text-gray-700 dark:text-gray-200" />}
+              <span className="sr-only">{darkMode ? 'Light' : 'Dark'}</span>
             </button>
 
             {/* Desktop auth controls */}
-            <div className="hidden items-center gap-2 md:flex lg:gap-3">
+            <div className="hidden items-center gap-1.5 md:flex lg:gap-2">
               {isGuest ? (
                 <div className="flex items-center gap-2">
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
-                    <span>👤</span> Guest Mode
+                    <UserIcon className="h-3.5 w-3.5" />
+                    <span>Guest Mode</span>
                   </span>
                   <button
                     type="button"
@@ -154,33 +182,37 @@ export function Navbar() {
                 <>
                   <Link
                     to="/dashboard"
-                    className="whitespace-nowrap text-sm font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400"
+                    className="flex items-center gap-1.5 whitespace-nowrap px-1 text-sm font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400"
                   >
-                    Dashboard
+                    <DashboardIcon className="h-4 w-4" />
+                    <span>Dashboard</span>
                   </Link>
 
                   {canAccessAdmin && (
                     <Link
                       to="/admin"
-                      className="whitespace-nowrap text-sm font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400"
+                      className="flex items-center gap-1.5 whitespace-nowrap px-1 text-sm font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400"
                     >
-                      Admin
+                      <GearIcon className="h-4 w-4" />
+                      <span>Admin</span>
                     </Link>
                   )}
 
                   <Link
                     to="/profile"
-                    className="max-w-[72px] truncate text-sm font-medium text-gray-800 dark:text-gray-200 lg:max-w-[120px]"
+                    className="flex max-w-[100px] items-center gap-1.5 truncate px-1 text-sm font-medium text-gray-800 dark:text-gray-200 lg:max-w-[140px]"
                   >
-                    {user?.name}
+                    <UserIcon className="h-4 w-4 shrink-0" />
+                    <span className="truncate">{user?.name}</span>
                   </Link>
 
                   <button
                     type="button"
                     onClick={handleLogout}
-                    className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+                    className="flex items-center gap-1.5 rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
                   >
-                    Logout
+                    <LogoutIcon className="h-4 w-4" />
+                    <span>Logout</span>
                   </button>
                 </>
               ) : (
@@ -199,9 +231,9 @@ export function Navbar() {
               onClick={() => setMenuOpen((value) => !value)}
               aria-label="Toggle navigation menu"
               aria-expanded={menuOpen}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-gray-300 text-xl text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800 md:hidden"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-gray-300 text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800 md:hidden"
             >
-              {menuOpen ? '✕' : '☰'}
+              {menuOpen ? <XIcon className="h-5 w-5" /> : <MenuIcon className="h-5 w-5" />}
             </button>
           </div>
         </div>
@@ -227,17 +259,20 @@ export function Navbar() {
 
             {/* Panel header */}
             <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4 dark:border-gray-800">
-              <span className="font-bold text-brand-600">
-                CESA-SDW Portal
+              <span className="flex items-center gap-2 font-bold text-brand-600">
+                <span className="flex h-6 w-6 items-center justify-center rounded bg-brand-600 text-white font-extrabold text-xs">
+                  SDW
+                </span>
+                <span>CESA-SDW Portal</span>
               </span>
 
               <button
                 type="button"
                 onClick={() => setMenuOpen(false)}
-                className="text-xl text-gray-600 dark:text-gray-300"
+                className="rounded p-1 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
                 aria-label="Close menu"
               >
-                ✕
+                <XIcon className="h-5 w-5" />
               </button>
             </div>
 
@@ -250,8 +285,8 @@ export function Navbar() {
                   onClick={() => setMenuOpen(false)}
                   className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-brand-600 dark:text-gray-200 dark:hover:bg-gray-800 dark:hover:text-brand-400"
                 >
-                  <span className="text-lg">{link.icon}</span>
-                  {link.label}
+                  <span className="shrink-0">{link.icon}</span>
+                  <span>{link.label}</span>
                 </Link>
               ))}
 
@@ -260,7 +295,10 @@ export function Navbar() {
               {isGuest ? (
                 <div className="flex flex-col gap-2 pt-2">
                   <div className="flex items-center justify-between rounded-lg bg-amber-50 px-4 py-2.5 text-xs font-medium text-amber-800 dark:bg-amber-950/50 dark:text-amber-300">
-                    <span>Browsing as Guest</span>
+                    <span className="flex items-center gap-1.5">
+                      <UserIcon className="h-3.5 w-3.5" />
+                      <span>Browsing as Guest</span>
+                    </span>
                     <span className="rounded-full bg-amber-200 px-2 py-0.5 font-bold text-amber-900 dark:bg-amber-800 dark:text-amber-100">Guest</span>
                   </div>
                   <button
@@ -278,7 +316,8 @@ export function Navbar() {
                     onClick={() => setMenuOpen(false)}
                     className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
                   >
-                    📊 Dashboard
+                    <DashboardIcon className="h-4 w-4" />
+                    <span>Dashboard</span>
                   </Link>
 
                   {canAccessAdmin && (
@@ -287,7 +326,8 @@ export function Navbar() {
                       onClick={() => setMenuOpen(false)}
                       className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
                     >
-                      ⚙️ Admin
+                      <GearIcon className="h-4 w-4" />
+                      <span>Admin</span>
                     </Link>
                   )}
 
@@ -296,15 +336,17 @@ export function Navbar() {
                     onClick={() => setMenuOpen(false)}
                     className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
                   >
-                    👤 Profile
+                    <UserIcon className="h-4 w-4" />
+                    <span>Profile</span>
                   </Link>
 
                   <button
                     type="button"
                     onClick={handleLogout}
-                    className="mt-2 rounded-lg border border-gray-300 px-4 py-3 text-left text-sm font-medium text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+                    className="mt-2 flex items-center gap-3 rounded-lg border border-gray-300 px-4 py-3 text-left text-sm font-medium text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
                   >
-                    🚪 Logout
+                    <LogoutIcon className="h-4 w-4" />
+                    <span>Logout</span>
                   </button>
                 </>
               ) : (

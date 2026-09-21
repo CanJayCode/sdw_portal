@@ -11,7 +11,7 @@ export function HomePage() {
       <h1 className="relative mb-4 text-4xl font-bold tracking-tight text-gray-900 dark:text-gray-100 sm:text-5xl">CESA-SDW Portal</h1>
 
       <p className="relative mx-auto mb-8 max-w-xl text-base leading-7 text-gray-600 dark:text-gray-300 sm:text-lg">
-        {isAuthenticated
+        {(isAuthenticated && !((user?.name) == "Guest User"))
           ? `Welcome back, ${user?.name}.`
           : 'Log in to register for events, track achievements, and view the leaderboard.'}
       </p>

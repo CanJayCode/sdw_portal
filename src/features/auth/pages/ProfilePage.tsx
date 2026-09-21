@@ -2,12 +2,19 @@ import { useAuthStore } from '@/store/auth';
 import { Card } from '@/components/ui/Feedback';
 import { ClubLogo } from '@/components/ui/ClubLogo';
 import { Link, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { getUserProfile } from '../api';
 
 export function ProfilePage() {
   const { user, auth, logout } = useAuthStore();
   const navigate = useNavigate();
+  const profileQuery = useQuery({ queryKey: ['profile'], queryFn: getUserProfile });
 
   if (!user || !auth) return null;
+
+  const profile = profileQuery.data;
+  const profileUser = profile?.user ?? user;
+  const profileAuth = profile?.auth ?? (profile?.memberships ? { ...auth, memberships: profile.memberships } : auth);
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -16,21 +23,21 @@ export function ProfilePage() {
       <Card>
         <h2 className="mb-4 text-lg font-semibold">Student information</h2>
         <div className="grid gap-4 sm:grid-cols-2">
-          <ProfileField label="Name" value={user.name} />
-          <ProfileField label="Email" value={user.email} />
-          <ProfileField label="PRN" value={user.prn} />
-          <ProfileField label="Program / Department" value={user.branch} />
-          <ProfileField label="Year" value={user.year} />
-          {user.avatar && <ProfileField label="Profile image" value="Available" />}
+          <ProfileField label="Name" value={profileUser.name} />
+          <ProfileField label="Email" value={profileUser.email} />
+          <ProfileField label="PRN" value={profileUser.prn} />
+          <ProfileField label="Program / Department" value={profileUser.branch} />
+          <ProfileField label="Year" value={profileUser.year} />
+          {(profileUser.profilePicture || profileUser.avatar) && <ProfileField label="Profile image" value="Available" />}
         </div>
-        <p className="mt-4 text-xs text-gray-500">Profile editing, semester, and about fields are not exposed by the current profile API.</p>
+        {profileQuery.isError && <p className="mt-4 text-xs text-amber-600">Some profile details could not be refreshed.</p>}
       </Card>
 
       <Card>
         <h2 className="mb-3 text-lg font-semibold">Club affiliations</h2>
-        {auth.memberships.length === 0 && <p className="text-sm text-gray-500">No club memberships yet.</p>}
+        {profileAuth.memberships.length === 0 && <p className="text-sm text-gray-500">No club memberships yet.</p>}
         <div className="space-y-3">
-          {auth.memberships.map((m) => (
+          {profileAuth.memberships.map((m) => (
             <div key={m.clubId} className="flex items-center gap-3 rounded-md border p-3">
               <ClubLogo club={{ code: m.clubCode, name: m.clubName }} />
               <div>

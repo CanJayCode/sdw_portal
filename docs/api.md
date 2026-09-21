@@ -19,7 +19,9 @@
 10. [Members Endpoints (`/members` & `/clubs/:clubId/members`)](#10-members-endpoints-members)
 11. [Notifications Endpoints (`/notifications` & `/users/me`)](#11-notifications-endpoints-notifications)
 12. [Audit Logs Endpoints (`/audit-logs`)](#12-audit-logs-endpoints-audit-logs)
-13. [Frontend Integration Recipes](#13-frontend-integration-recipes)
+13. [Media & Upload Endpoints (`/upload`)](#13-media--upload-endpoints-upload)
+14. [Master Admin Endpoints (`/admin`)](#14-master-admin-endpoints-admin)
+15. [Frontend Integration Recipes](#15-frontend-integration-recipes)
 
 ---
 
@@ -126,13 +128,16 @@ PENDING_DOCUMENTATION_REVIEW (Assigned to ACM Doc Member)
 
 ## 4. Authentication Endpoints (`/auth`)
 
+> [!IMPORTANT]
+> **Standardized User Identifier (`id` and `_id`)**: Every authentication response (`/auth/register`, `/auth/login`, `/auth/me`) explicitly provides both `id` and `_id` with identical string representations of the user's ObjectId. This eliminates any naming mismatch between mobile (React Native / Flutter / Android / iOS) and web frontends.
+
 ### 4.1 Register Student
 Creates a new student profile. If the student previously submitted any guest achievements using this PRN or email, they are automatically linked to this account.
 
 - **Method:** `POST`
 - **URL:** `/api/v1/auth/register`
 - **Auth Required:** No
-- **Rate Limit:** 10 requests / 15 min
+- **Rate Limit:** 10 requests / 15 min (skipped in development)
 
 #### Request Body
 ```json
@@ -155,6 +160,7 @@ Creates a new student profile. If the student previously submitted any guest ach
   "data": {
     "user": {
       "id": "66e57b98f1234567890abcd1",
+      "_id": "66e57b98f1234567890abcd1",
       "prn": "STU-2026-003",
       "email": "student3@institution.edu",
       "name": "Neha Sharma",
@@ -178,12 +184,12 @@ Creates a new student profile. If the student previously submitted any guest ach
 ---
 
 ### 4.2 Login
-Authenticate using PRN or Email and Password. Returns the user object, aggregated RBAC roles and permissions across all clubs, and JWT tokens.
+Authenticate using PRN or Email and Password. Returns the user object with both `id` and `_id`, aggregated RBAC roles and permissions across all clubs, and JWT tokens.
 
 - **Method:** `POST`
 - **URL:** `/api/v1/auth/login`
 - **Auth Required:** No
-- **Rate Limit:** 10 requests / 15 min
+- **Rate Limit:** 10 requests / 15 min (skipped in development)
 
 #### Request Body
 ```json
@@ -202,6 +208,7 @@ Authenticate using PRN or Email and Password. Returns the user object, aggregate
   "data": {
     "user": {
       "id": "66e57b98f1234567890abcd2",
+      "_id": "66e57b98f1234567890abcd2",
       "prn": "ACM-PRES-001",
       "email": "acm.president@institution.edu",
       "name": "Aarav Sharma",
@@ -328,6 +335,7 @@ Returns the logged-in user profile, active club memberships, and union of permis
   "data": {
     "user": {
       "id": "66e57b98f1234567890abcd2",
+      "_id": "66e57b98f1234567890abcd2",
       "prn": "ACM-PRES-001",
       "email": "acm.president@institution.edu",
       "name": "Aarav Sharma",
@@ -421,36 +429,365 @@ Returns club profile plus active members count and upcoming events count.
 
 ---
 
-### 5.3 Get Roles of a Club
-Returns all configured roles and their permissions for this club.
+### 5.3 Get Roles & Executive Board of a Club
+Returns all configured roles, permissions, and current active executive board members (President, VP, Secretary, Management Executives, Doc Members) for this club.
 
 - **Method:** `GET`
 - **URL:** `/api/v1/clubs/:clubId/roles`
-- **Auth Required:** Yes (`Bearer <accessToken>`)
+- **Auth Required:** Optional (`Bearer <accessToken>`)
 
 #### Success Response (`200 OK`)
 ```json
 {
   "success": true,
   "statusCode": 200,
-  "message": "Club roles retrieved successfully",
+  "message": "Club roles and executive board retrieved successfully",
+  "data": {
+    "roles": [
+      {
+        "_id": "66e57b98f1234567890abd11",
+        "clubId": "66e57b98f1234567890abc98",
+        "name": "President",
+        "scope": "CLUB",
+        "permissions": [
+          "CREATE_EVENT",
+          "EDIT_EVENT",
+          "DELETE_EVENT",
+          "EDIT_CLUB_MEMBERS",
+          "REMOVE_CLUB_MEMBERS",
+          "VIEW_CLUB_MEMBERS",
+          "VIEW_LEADERBOARD"
+        ]
+      }
+    ],
+    "executiveBoard": [
+      {
+        "user": {
+          "_id": "66e57b98f1234567890abcd6",
+          "name": "Vikram Joshi",
+          "email": "owasp.president@institution.edu",
+          "prn": "OWASP-PRES-001",
+          "branch": "Computer Engineering",
+          "year": "BE",
+          "avatar": ""
+        },
+        "roles": [
+          {
+            "id": "66e57b98f1234567890abd11",
+            "name": "President",
+            "scope": "CLUB"
+          }
+        ],
+        "joinedAt": "2026-09-14T07:30:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+---
+
+### 5.4 Get Executive Board Members (Dedicated Endpoint)
+Returns only the active executive team of a club.
+
+- **Method:** `GET`
+- **URL:** `/api/v1/clubs/:clubId/executive-board` (alias: `/api/v1/clubs/:clubId/board`)
+- **Auth Required:** Optional (`Bearer <accessToken>`)
+
+#### Success Response (`200 OK`)
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "message": "Club executive board retrieved successfully",
   "data": [
     {
-      "_id": "66e57b98f1234567890abd11",
-      "clubId": "66e57b98f1234567890abc98",
-      "name": "President",
-      "scope": "CLUB",
-      "permissions": [
-        "CREATE_EVENT",
-        "EDIT_EVENT",
-        "DELETE_EVENT",
-        "EDIT_CLUB_MEMBERS",
-        "REMOVE_CLUB_MEMBERS",
-        "VIEW_CLUB_MEMBERS",
-        "VIEW_LEADERBOARD"
-      ]
+      "user": {
+        "_id": "66e57b98f1234567890abcd6",
+        "name": "Vikram Joshi",
+        "email": "owasp.president@institution.edu",
+        "prn": "OWASP-PRES-001",
+        "branch": "Computer Engineering",
+        "year": "BE",
+        "avatar": ""
+      },
+      "roles": [
+        {
+          "id": "66e57b98f1234567890abd11",
+          "name": "President",
+          "scope": "CLUB"
+        }
+      ],
+      "joinedAt": "2026-09-14T07:30:00.000Z"
     }
   ]
+}
+```
+
+---
+
+### 5.5 Edit Club Logo
+Update the logo of a club. Supports either `multipart/form-data` image upload (auto-uploaded to Cloudinary) OR a direct `logoUrl` string in request body.
+
+- **Method:** `PATCH` or `PUT`
+- **URL:** `/api/v1/clubs/:clubId/logo` (accepts MongoDB `_id` or uppercase club code like `OWASP`)
+- **Auth Required:** Yes (`Bearer <accessToken>`, requires `EDIT_CLUB` or `EDIT_CLUB_MEMBERS` in club, or CESA Scope)
+- **Headers:**
+  - `Content-Type: multipart/form-data` (when uploading a file: field `logo`, `image`, or `file`)
+  - OR `Content-Type: application/json` (when providing `logoUrl`)
+
+#### Request Body (JSON Option)
+```json
+{
+  "logoUrl": "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=150"
+}
+```
+
+#### Request Body (Multipart Option)
+- Key `logo` (or `image`, `file`): `<binary image file>` (JPEG, PNG, WEBP, GIF, SVG up to 10MB)
+
+#### Success Response (`200 OK`)
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "message": "Club logo updated successfully",
+  "data": {
+    "_id": "6aa7b308107ef0501eeab242",
+    "code": "OWASP",
+    "name": "OWASP Student Chapter",
+    "description": "Dedicated to cyber security...",
+    "logoUrl": "https://res.cloudinary.com/leyyzxjg/image/upload/v1790015729/cesa/clubs/ffotbblduxaez3cprhjn.png",
+    "isCoordinator": false,
+    "isActive": true
+  }
+}
+```
+
+---
+
+### 5.6 Remove Club Logo
+Removes / resets the club logo to an empty string.
+
+- **Method:** `DELETE`
+- **URL:** `/api/v1/clubs/:clubId/logo`
+- **Auth Required:** Yes (`Bearer <accessToken>`, requires `EDIT_CLUB` or `EDIT_CLUB_MEMBERS` in club, or CESA Scope)
+
+#### Success Response (`200 OK`)
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "message": "Club logo removed successfully",
+  "data": {
+    "_id": "6aa7b308107ef0501eeab242",
+    "code": "OWASP",
+    "name": "OWASP Student Chapter",
+    "logoUrl": "",
+    "isCoordinator": false,
+    "isActive": true
+  }
+}
+```
+
+---
+
+### 5.7 Edit Club Name
+Updates the name of the club.
+
+- **Method:** `PATCH`
+- **URL:** `/api/v1/clubs/:clubId/name`
+- **Auth Required:** Yes (`Bearer <accessToken>`, requires `EDIT_CLUB` or `EDIT_CLUB_MEMBERS` in club, or CESA Scope)
+
+#### Request Body
+```json
+{
+  "name": "OWASP Student Chapter"
+}
+```
+
+#### Success Response (`200 OK`)
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "message": "Club name updated successfully",
+  "data": {
+    "_id": "6aa7b308107ef0501eeab242",
+    "code": "OWASP",
+    "name": "OWASP Student Chapter",
+    "description": "Dedicated to cyber security...",
+    "logoUrl": "https://...",
+    "isCoordinator": false,
+    "isActive": true
+  }
+}
+```
+
+---
+
+### 5.8 Edit Club Description
+Updates the description of the club.
+
+- **Method:** `PATCH`
+- **URL:** `/api/v1/clubs/:clubId/description`
+- **Auth Required:** Yes (`Bearer <accessToken>`, requires `EDIT_CLUB` or `EDIT_CLUB_MEMBERS` in club, or CESA Scope)
+
+#### Request Body
+```json
+{
+  "description": "Dedicated to cyber security, ethical hacking, and secure application development."
+}
+```
+
+#### Success Response (`200 OK`)
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "message": "Club description updated successfully",
+  "data": {
+    "_id": "6aa7b308107ef0501eeab242",
+    "code": "OWASP",
+    "name": "OWASP Student Chapter",
+    "description": "Dedicated to cyber security, ethical hacking, and secure application development.",
+    "logoUrl": "https://...",
+    "isCoordinator": false,
+    "isActive": true
+  }
+}
+```
+
+---
+
+### 5.9 Edit Club Code
+Updates the unique uppercase code of the club. Validates uniqueness across all clubs.
+
+- **Method:** `PATCH`
+- **URL:** `/api/v1/clubs/:clubId/code`
+- **Auth Required:** Yes (`Bearer <accessToken>`, requires `EDIT_CLUB` or `EDIT_CLUB_MEMBERS` in club, or CESA Scope)
+
+#### Request Body
+```json
+{
+  "code": "OWASP"
+}
+```
+
+#### Success Response (`200 OK`)
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "message": "Club code updated successfully",
+  "data": {
+    "_id": "6aa7b308107ef0501eeab242",
+    "code": "OWASP",
+    "name": "OWASP Student Chapter",
+    "isCoordinator": false,
+    "isActive": true
+  }
+}
+```
+
+---
+
+### 5.10 Edit Club Active Status
+Enables or disables a club (active / inactive status).
+
+- **Method:** `PATCH`
+- **URL:** `/api/v1/clubs/:clubId/status` (alias: `/api/v1/clubs/:clubId/active`)
+- **Auth Required:** Yes (`Bearer <accessToken>`, requires `EDIT_CLUB` or `EDIT_CLUB_MEMBERS` in club, or CESA Scope)
+
+#### Request Body
+```json
+{
+  "isActive": true
+}
+```
+
+#### Success Response (`200 OK`)
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "message": "Club status updated successfully",
+  "data": {
+    "_id": "6aa7b308107ef0501eeab242",
+    "code": "OWASP",
+    "name": "OWASP Student Chapter",
+    "isActive": true
+  }
+}
+```
+
+---
+
+### 5.11 Edit Club Coordinator Status (CESA Scope Only)
+Sets whether a club acts as the CESA Coordinator club (only ACM by default). Restricted strictly to CESA scope administrators.
+
+- **Method:** `PATCH`
+- **URL:** `/api/v1/clubs/:clubId/coordinator` (alias: `/api/v1/clubs/:clubId/is-coordinator`)
+- **Auth Required:** Yes (`Bearer <accessToken>`, CESA Scope required e.g. ACM President)
+
+#### Request Body
+```json
+{
+  "isCoordinator": true
+}
+```
+
+#### Success Response (`200 OK`)
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "message": "Club coordinator status updated successfully",
+  "data": {
+    "_id": "6aa7b308107ef0501eeab241",
+    "code": "ACM",
+    "name": "Association for Computing Machinery (ACM)",
+    "isCoordinator": true
+  }
+}
+```
+
+---
+
+### 5.12 Edit Any or All Club Details (Comprehensive Update)
+Updates multiple or all fields of a club in one request. Supports optional file upload in `multipart/form-data` for updating the logo simultaneously.
+
+- **Method:** `PATCH` or `PUT`
+- **URL:** `/api/v1/clubs/:clubId`
+- **Auth Required:** Yes (`Bearer <accessToken>`, requires `EDIT_CLUB` or `EDIT_CLUB_MEMBERS` in club, or CESA Scope)
+- **Headers:** `Content-Type: application/json` OR `Content-Type: multipart/form-data`
+
+#### Request Body (All fields optional)
+```json
+{
+  "name": "OWASP Student Chapter",
+  "description": "Dedicated to cyber security, ethical hacking, and secure application development.",
+  "code": "OWASP",
+  "logoUrl": "https://example.com/logo.png",
+  "isActive": true
+}
+```
+
+#### Success Response (`200 OK`)
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "message": "Club details updated successfully",
+  "data": {
+    "_id": "6aa7b308107ef0501eeab242",
+    "code": "OWASP",
+    "name": "OWASP Student Chapter",
+    "description": "Dedicated to cyber security, ethical hacking, and secure application development.",
+    "logoUrl": "https://example.com/logo.png",
+    "isCoordinator": false,
+    "isActive": true
+  }
 }
 ```
 
@@ -465,11 +802,11 @@ Returns published events. Supports filtering by club, status, and upcoming flag.
 - **URL:** `/api/v1/events`
 - **Auth Required:** Optional
 - **Query Parameters:**
-  - `clubId` (optional): Filter by specific club ObjectId.
-  - `status` (optional): Default is `PUBLISHED`.
-  - `upcoming` (optional): `true` to only show future events.
-  - `page` (optional, default: 1)
-  - `limit` (optional, default: 20)
+  - `clubId` (optional): Filter by club. Accepts either a 24-character MongoDB ObjectId (e.g. `66e57b98f1234567890abc98`) or a Club Code (e.g. `ACM`, `OWASP`, `GDGC`, `LFDT`, `ACM-W`, case-insensitive).
+  - `status` (optional): Filter by event status. Default is `PUBLISHED`.
+  - `upcoming` (optional): `true` to only return future/ongoing events where `endDate >= now`.
+  - `page` (optional, default: 1): Page number.
+  - `limit` (optional, default: 20): Items per page.
 
 #### Success Response (`200 OK`)
 ```json
@@ -846,19 +1183,240 @@ Allows non-logged-in students or guests to submit achievements using email and P
 ---
 
 ### 7.4 Get My Submitted Achievements
-Returns all achievements submitted by the currently logged-in student.
+Returns all achievements submitted by the currently logged-in student, including their current review status, evidence URLs, assigned documentation reviewer, and review/approval history.
 
 - **Method:** `GET`
 - **URL:** `/api/v1/achievements/my`
-- **Auth Required:** Yes
+- **Auth Required:** Yes (`Bearer <accessToken>`)
 - **Query Parameters:**
-  - `status` (optional): Filter by status
-  - `page` (optional)
-  - `limit` (optional)
+  - `status` (optional): Filter by achievement status (`PENDING_DOCUMENTATION_REVIEW`, `EVIDENCE_REQUESTED`, `PENDING_SECRETARY_APPROVAL`, `AUTHENTICATED`, `REJECTED_BY_DOCUMENTATION`, `REJECTED_BY_SECRETARY`)
+  - `page` (optional, default: 1): Page number
+  - `limit` (optional, default: 20): Items per page
+
+#### Success Response (`200 OK`)
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "message": "Your achievements fetched successfully",
+  "data": [
+    {
+      "_id": "66e57b98f1234567890ac301",
+      "submitterType": "STUDENT",
+      "studentId": "66e57b98f1234567890abcd7",
+      "title": "Smart India Hackathon 2026 1st Prize Winner",
+      "description": "Led team of 6 building an AI-powered supply chain resilience platform.",
+      "points": 100,
+      "status": "AUTHENTICATED",
+      "evidenceUrls": [
+        "https://res.cloudinary.com/demo/image/upload/v1726300000/sih2026_certificate.pdf"
+      ],
+      "achievementTypeId": {
+        "_id": "66e57b98f1234567890abd01",
+        "code": "HACKATHON_WIN",
+        "name": "Hackathon Winner / Runner Up",
+        "category": "Competition",
+        "defaultPoints": 100
+      },
+      "semesterId": {
+        "_id": "66e57b98f1234567890abc01",
+        "code": "2026-FALL",
+        "name": "Fall Semester 2026",
+        "isCurrent": true
+      },
+      "assignedDocReviewerId": {
+        "_id": "66e57b98f1234567890abcd5",
+        "name": "Tanvi Patil",
+        "email": "acm.doc@institution.edu"
+      },
+      "reviewHistory": [
+        {
+          "reviewerId": {
+            "_id": "66e57b98f1234567890abcd5",
+            "name": "Tanvi Patil",
+            "email": "acm.doc@institution.edu"
+          },
+          "action": "PENDING_SECRETARY_APPROVAL",
+          "notes": "Verified certificate QR and checked against official portal.",
+          "reviewedAt": "2026-09-14T08:30:00.000Z"
+        }
+      ],
+      "approvalInfo": {
+        "approvedBy": {
+          "_id": "66e57b98f1234567890abcd3",
+          "name": "Rohan Gupta",
+          "email": "acm.secretary@institution.edu"
+        },
+        "approvedAt": "2026-09-14T08:45:00.000Z",
+        "approverRole": "Secretary",
+        "coSecretaryApproved": false,
+        "secretaryOverridden": false
+      },
+      "createdAt": "2026-09-14T08:00:00.000Z",
+      "updatedAt": "2026-09-14T08:45:00.000Z"
+    }
+  ],
+  "meta": {
+    "total": 1,
+    "page": 1,
+    "limit": 20,
+    "totalPages": 1,
+    "hasNextPage": false,
+    "hasPrevPage": false
+  }
+}
+```
 
 ---
 
-### 7.5 Review Queue (ACM Doc Member / Secretary)
+### 7.5 Get Single Achievement Details (Authenticated / Detailed View)
+Fetches complete details of a specific achievement by ID, including evidence URLs, documentation review comments, and approval metadata.
+- If the achievement is `AUTHENTICATED`, it is viewable publicly.
+- If it is in a pending or rejected state, it is accessible to the submitter, the assigned documentation reviewer, or CESA executives (Secretary, VP, President).
+
+- **Method:** `GET`
+- **URL:** `/api/v1/achievements/:id`
+- **Auth Required:** Optional (`Bearer <accessToken>`)
+
+#### Success Response (`200 OK`)
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "message": "Achievement details retrieved successfully",
+  "data": {
+    "_id": "66e57b98f1234567890ac301",
+    "submitterType": "STUDENT",
+    "studentId": {
+      "_id": "66e57b98f1234567890abcd7",
+      "name": "Aditya Kulkarni",
+      "prn": "STU-2026-001",
+      "email": "aditya.kulkarni@institution.edu",
+      "branch": "Computer Engineering",
+      "year": "TE"
+    },
+    "title": "Smart India Hackathon 2026 1st Prize Winner",
+    "description": "Led team of 6 building an AI-powered supply chain resilience platform.",
+    "points": 100,
+    "status": "AUTHENTICATED",
+    "evidenceUrls": [
+      "https://res.cloudinary.com/demo/image/upload/v1726300000/sih2026_certificate.pdf"
+    ],
+    "achievementTypeId": {
+      "_id": "66e57b98f1234567890abd01",
+      "code": "HACKATHON_WIN",
+      "name": "Hackathon Winner / Runner Up",
+      "category": "Competition",
+      "defaultPoints": 100
+    },
+    "semesterId": {
+      "_id": "66e57b98f1234567890abc01",
+      "code": "2026-FALL",
+      "name": "Fall Semester 2026"
+    },
+    "assignedDocReviewerId": {
+      "_id": "66e57b98f1234567890abcd5",
+      "name": "Tanvi Patil",
+      "email": "acm.doc@institution.edu"
+    },
+    "reviewHistory": [
+      {
+        "reviewerId": {
+          "_id": "66e57b98f1234567890abcd5",
+          "name": "Tanvi Patil",
+          "email": "acm.doc@institution.edu"
+        },
+        "action": "PENDING_SECRETARY_APPROVAL",
+        "notes": "Verified certificate QR and checked against official portal.",
+        "reviewedAt": "2026-09-14T08:30:00.000Z"
+      }
+    ],
+    "approvalInfo": {
+      "approvedBy": {
+        "_id": "66e57b98f1234567890abcd3",
+        "name": "Rohan Gupta",
+        "email": "acm.secretary@institution.edu"
+      },
+      "approvedAt": "2026-09-14T08:45:00.000Z",
+      "approverRole": "Secretary",
+      "coSecretaryApproved": false,
+      "secretaryOverridden": false
+    },
+    "createdAt": "2026-09-14T08:00:00.000Z",
+    "updatedAt": "2026-09-14T08:45:00.000Z"
+  }
+}
+```
+
+---
+
+### 7.6 Public Authenticated Achievements Showcase
+Public feed / gallery of verified and authenticated student achievements across the institution. Perfect for home screens, discovery feeds, and profile highlights.
+
+- **Method:** `GET`
+- **URL:** `/api/v1/achievements/public`
+- **Auth Required:** No
+- **Query Parameters:**
+  - `semesterId` (optional): Filter achievements by semester ObjectId
+  - `achievementTypeId` (optional): Filter by achievement category type ObjectId
+  - `studentId` (optional): Filter by student user ObjectId
+  - `page` (optional, default: 1): Page number
+  - `limit` (optional, default: 20): Items per page
+
+#### Success Response (`200 OK`)
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "message": "Authenticated achievements retrieved successfully",
+  "data": [
+    {
+      "_id": "66e57b98f1234567890ac301",
+      "title": "Smart India Hackathon 2026 1st Prize Winner",
+      "description": "Led team of 6 building an AI-powered supply chain resilience platform.",
+      "points": 100,
+      "status": "AUTHENTICATED",
+      "evidenceUrls": [
+        "https://res.cloudinary.com/demo/image/upload/v1726300000/sih2026_certificate.pdf"
+      ],
+      "studentId": {
+        "_id": "66e57b98f1234567890abcd7",
+        "name": "Aditya Kulkarni",
+        "prn": "STU-2026-001",
+        "branch": "Computer Engineering",
+        "year": "TE",
+        "avatar": ""
+      },
+      "achievementTypeId": {
+        "_id": "66e57b98f1234567890abd01",
+        "code": "HACKATHON_WIN",
+        "name": "Hackathon Winner / Runner Up",
+        "category": "Competition",
+        "defaultPoints": 100
+      },
+      "semesterId": {
+        "_id": "66e57b98f1234567890abc01",
+        "code": "2026-FALL",
+        "name": "Fall Semester 2026",
+        "isCurrent": true
+      },
+      "createdAt": "2026-09-14T08:00:00.000Z"
+    }
+  ],
+  "meta": {
+    "total": 1,
+    "page": 1,
+    "limit": 20,
+    "totalPages": 1,
+    "hasNextPage": false,
+    "hasPrevPage": false
+  }
+}
+```
+
+---
+
+### 7.7 Review Queue (ACM Doc Member / Secretary)
 List pending achievements for reviewers.
 
 - **Method:** `GET`
@@ -872,7 +1430,7 @@ List pending achievements for reviewers.
 
 ---
 
-### 7.6 Step 3: Documentation Review (ACM Doc Member Only)
+### 7.8 Step 3: Documentation Review (ACM Doc Member Only)
 Doc Member reviews evidence URLs and updates status.
 - `action = "APPROVE"` ➔ Status becomes `PENDING_SECRETARY_APPROVAL`.
 - `action = "REQUEST_EVIDENCE"` ➔ Status becomes `EVIDENCE_REQUESTED`.
@@ -913,7 +1471,7 @@ Doc Member reviews evidence URLs and updates status.
 
 ---
 
-### 7.7 Step 3b: Student Resubmits Evidence
+### 7.9 Step 3b: Student Resubmits Evidence
 When an achievement is in `EVIDENCE_REQUESTED` status, the student can submit new evidence. Resets status to `PENDING_DOCUMENTATION_REVIEW`.
 
 - **Method:** `PATCH`
@@ -932,7 +1490,7 @@ When an achievement is in `EVIDENCE_REQUESTED` status, the student can submit ne
 
 ---
 
-### 7.8 Step 4: Secretary / Co-Secretary Approval
+### 7.10 Step 4: Secretary / Co-Secretary Approval
 Final authentication. Status becomes `AUTHENTICATED`. **Points are automatically awarded to the student on the CESA Leaderboard** for the current semester.
 
 - **Method:** `POST`
@@ -962,7 +1520,7 @@ Final authentication. Status becomes `AUTHENTICATED`. **Points are automatically
 
 ---
 
-### 7.9 Step 4b: Secretary / Co-Secretary Rejection
+### 7.11 Step 4b: Secretary / Co-Secretary Rejection
 Rejects the achievement. Status becomes `REJECTED_BY_SECRETARY`.
 
 - **Method:** `POST`
@@ -978,7 +1536,7 @@ Rejects the achievement. Status becomes `REJECTED_BY_SECRETARY`.
 
 ---
 
-### 7.10 Step 4c: Secretary Override (ACM Secretary Only)
+### 7.12 Step 4c: Secretary Override (ACM Secretary Only)
 If an achievement was approved by the Co-Secretary, the ACM Secretary can override it. Reverses points from the CESA Leaderboard and logs an audit trail.
 
 - **Method:** `POST`
@@ -1227,6 +1785,112 @@ Allows a student to leave their own club voluntarily with the same cascading cle
 
 ---
 
+### 10.6 Get Current User Profile
+Returns the authenticated student's profile including profile picture, card background, roles, and club memberships.
+
+- **Method:** `GET`
+- **URL:** `/api/v1/users/me`
+- **Auth Required:** Yes (`Bearer <accessToken>`)
+
+#### Success Response (`200 OK`)
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "message": "User profile retrieved successfully",
+  "data": {
+    "user": {
+      "id": "6aa7b30f107ef0501eeab265",
+      "prn": "STU-2026-001",
+      "email": "student1@institution.edu",
+      "name": "Aditya Kulkarni",
+      "branch": "Computer Engineering",
+      "year": "TE",
+      "profilePicture": "https://example.com/avatar.jpg",
+      "cardBackground": "https://example.com/banner.jpg",
+      "isMasterAdmin": false,
+      "role": "STUDENT"
+    },
+    "auth": { ... },
+    "memberships": [ ... ]
+  }
+}
+```
+
+---
+
+### 10.7 Update User Profile
+Updates user's name, branch, year, profile picture, or card background.
+
+- **Method:** `PATCH`
+- **URL:** `/api/v1/users/me`
+- **Auth Required:** Yes (`Bearer <accessToken>`)
+
+#### Request Body
+```json
+{
+  "name": "Aditya Kulkarni",
+  "branch": "Computer Engineering",
+  "year": "BE",
+  "profilePicture": "https://example.com/new-pic.jpg",
+  "cardBackground": "https://example.com/new-bg.jpg"
+}
+```
+
+---
+
+### 10.8 Update Profile Picture
+Updates the user's avatar / profile picture. Supports either `multipart/form-data` image upload (automatically stored in Cloudinary `cesa/users/avatars`) or direct JSON URL.
+
+- **Method:** `PATCH` or `PUT`
+- **URL:** `/api/v1/users/me/profile-picture`
+- **Auth Required:** Yes (`Bearer <accessToken>`)
+- **Headers:** `Content-Type: multipart/form-data` (field: `profilePicture`, `avatar`, `image`, or `file`) OR `application/json`
+
+#### Request Body (JSON Option)
+```json
+{
+  "profilePicture": "https://res.cloudinary.com/.../avatar.jpg"
+}
+```
+
+---
+
+### 10.9 Remove Profile Picture
+Removes and clears the profile picture.
+
+- **Method:** `DELETE`
+- **URL:** `/api/v1/users/me/profile-picture`
+- **Auth Required:** Yes (`Bearer <accessToken>`)
+
+---
+
+### 10.10 Update Card Background
+Updates the user's profile card background / banner image. Supports either `multipart/form-data` image upload (automatically stored in Cloudinary `cesa/users/backgrounds`) or direct JSON URL.
+
+- **Method:** `PATCH` or `PUT`
+- **URL:** `/api/v1/users/me/card-background`
+- **Auth Required:** Yes (`Bearer <accessToken>`)
+- **Headers:** `Content-Type: multipart/form-data` (field: `cardBackground`, `background`, `image`, or `file`) OR `application/json`
+
+#### Request Body (JSON Option)
+```json
+{
+  "cardBackground": "https://res.cloudinary.com/.../card-bg.jpg"
+}
+```
+
+---
+
+### 10.11 Remove Card Background
+Removes and clears the profile card background.
+
+- **Method:** `DELETE`
+- **URL:** `/api/v1/users/me/card-background`
+- **Auth Required:** Yes (`Bearer <accessToken>`)
+
+---
+
 ## 11. Notifications Endpoints (`/notifications`)
 
 ### 11.1 List Notifications
@@ -1268,16 +1932,55 @@ Returns user notifications with an unread count.
 ---
 
 ### 11.2 Mark Notification as Read
+Marks a single notification as read.
+
 - **Method:** `PATCH`
 - **URL:** `/api/v1/notifications/:id/read`
-- **Auth Required:** Yes
+- **Auth Required:** Yes (`Bearer <accessToken>`)
+
+#### Success Response (`200 OK`)
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "message": "Notification marked as read",
+  "data": {
+    "_id": "66e57b98f1234567890ad001",
+    "userId": "66e57b98f1234567890abcd7",
+    "type": "ACHIEVEMENT_APPROVED",
+    "title": "Achievement Authenticated & Approved! 🎉",
+    "message": "Your achievement was authenticated! +100 points awarded.",
+    "data": {
+      "achievementId": "66e57b98f1234567890ac301"
+    },
+    "isRead": true,
+    "readAt": "2026-09-14T09:10:00.000Z",
+    "createdAt": "2026-09-14T08:45:00.000Z",
+    "updatedAt": "2026-09-14T09:10:00.000Z"
+  }
+}
+```
 
 ---
 
 ### 11.3 Mark All Notifications as Read
+Marks all unread notifications for the authenticated user as read in bulk.
+
 - **Method:** `PATCH`
 - **URL:** `/api/v1/notifications/read-all`
-- **Auth Required:** Yes
+- **Auth Required:** Yes (`Bearer <accessToken>`)
+
+#### Success Response (`200 OK`)
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "message": "All notifications marked as read",
+  "data": {
+    "modifiedCount": 3
+  }
+}
+```
 
 ---
 
@@ -1316,7 +2019,303 @@ Audit trail of all administrative actions (event delists, secretary overrides, r
 
 ---
 
-## 13. Frontend Integration Recipes
+## 13. Media & Upload Endpoints (`/upload`)
+Cloudinary-powered asset storage for achievement evidence certificates, event banners, club logos, and student profile avatars.
+- **Allowed Formats:** JPG, JPEG, PNG, WEBP, GIF, PDF
+- **Max File Size:** 10MB per file
+- **Two Integration Methods Supported:**
+  1. **Direct Backend Multipart Upload:** Client posts file directly to `/upload/image`. The backend streams the buffer to Cloudinary and returns the secure URL.
+  2. **Direct Mobile Upload via Pre-signed Signature:** Client requests signature from `/upload/signature` and uploads directly from the device (React Native / Flutter / Android / iOS) to Cloudinary API, reducing mobile latency and server bandwidth.
+
+---
+
+### 13.1 Upload File / Image to Cloudinary (Multipart)
+Uploads an image or document (PDF) to Cloudinary through the Express backend.
+
+- **Method:** `POST`
+- **URL:** `/api/v1/upload/image`
+- **Auth Required:** Yes (`Bearer <accessToken>`)
+- **Content-Type:** `multipart/form-data`
+
+#### Request Body (`multipart/form-data`)
+| Field | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `image` (or `file`) | File (binary) | **Yes** | The image or PDF file to upload (max 10MB). |
+| `folder` | String (text) | No | Destination folder in Cloudinary. Examples: `cesa/achievements`, `cesa/events`, `cesa/avatars`. Defaults to `cesa/general`. |
+
+#### Success Response (`201 Created`)
+```json
+{
+  "success": true,
+  "statusCode": 201,
+  "message": "Image uploaded to Cloudinary successfully",
+  "data": {
+    "url": "http://res.cloudinary.com/demo/image/upload/v1726302000/cesa/achievements/cert_ai_2026.pdf",
+    "secure_url": "https://res.cloudinary.com/demo/image/upload/v1726302000/cesa/achievements/cert_ai_2026.pdf",
+    "public_id": "cesa/achievements/cert_ai_2026",
+    "format": "pdf",
+    "bytes": 245102,
+    "width": 1200,
+    "height": 900
+  }
+}
+```
+
+> **Use the returned `secure_url`** as the value for `evidenceUrls` when submitting achievements (`POST /achievements`), or `bannerUrl` when creating events (`POST /clubs/:clubId/events`).
+
+---
+
+### 13.2 Generate Cloudinary Upload Signature (For Mobile Direct Upload)
+For high-performance mobile apps (React Native, Flutter, Swift, Kotlin), devices can upload photos or PDFs directly from the phone to Cloudinary without routing bulky payloads through the backend.
+
+- **Method:** `POST`
+- **URL:** `/api/v1/upload/signature`
+- **Auth Required:** Yes (`Bearer <accessToken>`)
+- **Content-Type:** `application/json`
+
+#### Request Body
+```json
+{
+  "folder": "cesa/achievements" // Optional, default is "cesa/general"
+}
+```
+
+#### Success Response (`200 OK`)
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "message": "Cloudinary signed upload parameters generated",
+  "data": {
+    "timestamp": 1726302000,
+    "signature": "c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3",
+    "apiKey": "123456789012345",
+    "cloudName": "demo-institution",
+    "folder": "cesa/achievements"
+  }
+}
+```
+
+#### Direct Mobile Upload Instructions (React Native / Flutter)
+Once your mobile app receives the signature payload from the endpoint above, execute a standard `multipart/form-data` POST directly to Cloudinary:
+- **POST URL:** `https://api.cloudinary.com/v1_1/<cloudName>/image/upload` (or `/raw/upload` for generic PDFs)
+- **Form Fields:**
+  - `file`: The local file URI / blob
+  - `api_key`: `data.apiKey`
+  - `timestamp`: `data.timestamp`
+  - `signature`: `data.signature`
+  - `folder`: `data.folder`
+
+Cloudinary directly returns `{ "secure_url": "https://res.cloudinary.com/...", ... }`.
+
+---
+
+## 14. Master Admin Endpoints (`/admin`)
+
+> **Security Note:** All endpoints in this section are JWT protected and strictly restricted to the **Master Admin** (`isMasterAdmin: true`). The system enforces a strict business rule: **there can only ever be one Master Admin**.
+
+---
+
+### 14.1 Add Single PRN to Whitelist
+Registers a student PRN number into the whitelist. Only whitelisted PRNs are permitted to create accounts or log in.
+
+- **Method:** `POST`
+- **URL:** `/api/v1/admin/prns`
+- **Auth Required:** Yes (Master Admin only)
+
+#### Request Body
+```json
+{
+  "prn": "125B1B350",
+  "name": "Rohan Deshpande",
+  "email": "rohan.deshpande@pccoepune.org",
+  "branch": "Computer Engineering",
+  "year": "TE"
+}
+```
+
+---
+
+### 14.2 Edit Registered PRN
+Edits an existing whitelisted PRN record (updates the PRN value, name, branch, etc.). If the student has already registered, their User account PRN is automatically kept in sync.
+
+- **Method:** `PATCH`
+- **URL:** `/api/v1/admin/prns/:prn`
+- **Auth Required:** Yes (Master Admin only)
+
+#### Request Body
+```json
+{
+  "newPrn": "125B1B350-NEW",
+  "name": "Rohan K. Deshpande",
+  "branch": "Information Technology",
+  "year": "BE"
+}
+```
+
+---
+
+### 14.3 Delete PRN from Whitelist
+Deletes a PRN from the whitelist. If that student attempts to log in afterwards, their login is blocked with `"PRN not registered"`.
+
+- **Method:** `DELETE`
+- **URL:** `/api/v1/admin/prns/:prn`
+- **Auth Required:** Yes (Master Admin only)
+
+---
+
+### 14.4 Bulk Add PRNs to Whitelist
+Bulk registers an array of PRNs into the whitelist.
+
+- **Method:** `POST`
+- **URL:** `/api/v1/admin/prns/bulk`
+- **Auth Required:** Yes (Master Admin only)
+
+#### Request Body
+```json
+{
+  "prns": [
+    "125B1B101",
+    "125B1B102",
+    { "prn": "125B1B103", "name": "Aditi Patil", "branch": "IT", "year": "SE" }
+  ]
+}
+```
+
+---
+
+### 14.5 Bulk Delete PRNs from Whitelist
+Bulk deletes an array of PRNs from the whitelist.
+
+- **Method:** `DELETE`
+- **URL:** `/api/v1/admin/prns/bulk`
+- **Auth Required:** Yes (Master Admin only)
+
+#### Request Body
+```json
+{
+  "prns": ["125B1B101", "125B1B102"]
+}
+```
+
+---
+
+### 14.6 List Whitelisted PRNs
+Returns a paginated list of all PRNs in the whitelist, with optional filtering by registration status and search term.
+
+- **Method:** `GET`
+- **URL:** `/api/v1/admin/prns`
+- **Auth Required:** Yes (Master Admin only)
+- **Query Parameters:** `page`, `limit`, `search`, `isRegistered` (`true` / `false`)
+
+---
+
+### 14.7 Assign Club Admin Position
+Assigns a regular student as a Club Admin for a specific club. Grants them the club's administrator role and elevates their user role to `CLUB_ADMIN`.
+
+- **Method:** `POST`
+- **URL:** `/api/v1/admin/clubs/:clubId/admins`
+- **Auth Required:** Yes (Master Admin only)
+
+#### Request Body
+```json
+{
+  "userId": "6aa7b30f107ef0501eeab265",
+  "roleId": "6aa7b308107ef0501eeabd11" // Optional: defaults to President or Club Admin role
+}
+```
+
+---
+
+### 14.8 Remove Club Admin Position
+Removes the Club Admin role from a student for a specific club (demoting them back to regular Member). If they have no other club admin roles, their user role returns to `STUDENT`.
+
+- **Method:** `DELETE`
+- **URL:** `/api/v1/admin/clubs/:clubId/admins/:userId`
+- **Auth Required:** Yes (Master Admin only)
+
+---
+
+### 14.9 List Club Admins
+Lists all current administrators for a specified club.
+
+- **Method:** `GET`
+- **URL:** `/api/v1/admin/clubs/:clubId/admins`
+- **Auth Required:** Yes (Master Admin only)
+
+---
+
+### 14.10 Roles CRUD (Configure which roles can be admin)
+Master Admin has full CRUD over club roles, including toggling `canBeAdmin: true/false`.
+
+- `POST /api/v1/admin/roles` — Create role:
+  ```json
+  {
+    "clubId": "6aa7b308107ef0501eeab242",
+    "name": "Technical Lead",
+    "canBeAdmin": true,
+    "permissions": ["CREATE_EVENT", "EDIT_EVENT", "EDIT_CLUB_MEMBERS"],
+    "scope": "CLUB",
+    "description": "Tech lead with admin privileges"
+  }
+  ```
+- `GET /api/v1/admin/roles?clubId=...&canBeAdmin=true` — List roles (filter by club and/or admin eligibility)
+- `GET /api/v1/admin/roles/:roleId` — Get single role details
+- `PATCH /api/v1/admin/roles/:roleId` — Update role (toggle `canBeAdmin: false`, update permissions, etc.)
+- `DELETE /api/v1/admin/roles/:roleId` — Delete role (prevents deletion if active members hold it)
+
+---
+
+### 14.11 Clubs CRUD (Master Admin)
+Master Admin can create, inspect, update, or deactivate any club.
+
+- `POST /api/v1/admin/clubs` — Create new club
+- `GET /api/v1/admin/clubs` — List all clubs (active and inactive)
+- `GET /api/v1/admin/clubs/:clubId` — Get club details
+- `PATCH /api/v1/admin/clubs/:clubId` — Update club details
+- `DELETE /api/v1/admin/clubs/:clubId` — Deactivate club
+
+---
+
+### 14.12 Events CRUD (Master Admin)
+Master Admin can create, inspect, update, or delete events across any club.
+
+- `POST /api/v1/admin/events` — Create event for any club
+- `GET /api/v1/admin/events` — List events across all clubs
+- `GET /api/v1/admin/events/:eventId` — Get event details
+- `PATCH /api/v1/admin/events/:eventId` — Update event
+- `DELETE /api/v1/admin/events/:eventId` — Delete event
+
+---
+
+### 14.13 Students CRUD (Master Admin)
+Master Admin can manage all students in the portal.
+
+- `POST /api/v1/admin/students` — Create new student account (auto-whitelists PRN)
+- `GET /api/v1/admin/students` — List students with search and pagination
+- `GET /api/v1/admin/students/:userId` — Get student details with memberships
+- `PATCH /api/v1/admin/students/:userId` — Update student info
+- `DELETE /api/v1/admin/students/:userId` — Deactivate student account
+
+---
+
+### 14.14 Transfer Master Admin Role
+Transfers the single Master Admin role to another student. Ensures that only one Master Admin ever exists.
+
+- **Method:** `POST`
+- **URL:** `/api/v1/admin/transfer-master`
+- **Auth Required:** Yes (Current Master Admin only)
+
+#### Request Body
+```json
+{
+  "newMasterUserId": "6aa7b30f107ef0501eeab265"
+}
+```
+
+---
+
+## 15. Frontend Integration Recipes
 
 ### Recipe 1: Axios / Fetch Interceptor for Automatic Token Refresh
 ```typescript

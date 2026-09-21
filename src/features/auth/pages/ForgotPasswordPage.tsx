@@ -7,6 +7,7 @@ import { useMutation } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { forgotPassword } from '../api';
 import { ErrorMessage } from '@/components/ui/Feedback';
+import { MailIcon, ArrowLeftIcon } from '@/components/ui/Icons';
 
 const schema = z.object({
   prnOrEmail: z.string().min(1, 'PRN or email is required'),
@@ -44,8 +45,8 @@ export function ForgotPasswordPage() {
     <div className="ui-card mx-auto mt-12 max-w-md sm:mt-16">
       {submittedTarget ? (
         <div className="text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-2xl text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400">
-            ✉️
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950/60">
+            <MailIcon className="h-7 w-7 text-emerald-600 dark:text-emerald-400" />
           </div>
           <h1 className="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
             Password reset link sent
@@ -146,7 +147,8 @@ export function ForgotPasswordPage() {
               to="/login"
               className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-600 hover:underline dark:text-brand-400"
             >
-              <span>←</span> Back to login
+              <ArrowLeftIcon className="h-4 w-4" />
+              <span>Back to login</span>
             </Link>
           </div>
         </>

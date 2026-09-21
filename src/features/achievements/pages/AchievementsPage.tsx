@@ -9,6 +9,7 @@ import { ReviewModal, type ReviewModalType } from '../components/ReviewModal';
 import { ErrorMessage, Spinner } from '@/components/ui/Feedback';
 import { useAuthStore } from '@/store/auth';
 import { isDocMember, isSecretary, isCesaAdmin } from '@/lib/permissions';
+import { RefreshIcon } from '@/components/ui/Icons';
 import type { Achievement, AchievementStatus } from '../types';
 
 export { SubmitAchievementPage } from './SubmitAchievementPage';
@@ -186,9 +187,10 @@ export function AchievementsPage() {
             <button
               type="button"
               onClick={() => refetch()}
-              className="rounded-lg border border-gray-300 px-2.5 py-1 text-xs text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 px-2.5 py-1 text-xs text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
             >
-              ↻ Refresh
+              <RefreshIcon className="h-3.5 w-3.5" />
+              <span>Refresh</span>
             </button>
           </div>
 

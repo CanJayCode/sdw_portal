@@ -7,6 +7,7 @@ import { ReviewModal, type ReviewModalType } from '../components/ReviewModal';
 import { Card, Spinner, ErrorMessage } from '@/components/ui/Feedback';
 import { useAuthStore } from '@/store/auth';
 import { isDocMember, isSecretary, isCesaAdmin } from '@/lib/permissions';
+import { ArrowLeftIcon, ExternalLinkIcon } from '@/components/ui/Icons';
 import type { Achievement } from '../types';
 
 interface AchievementDetailPageProps {
@@ -37,8 +38,9 @@ export const AchievementDetailPage: React.FC<AchievementDetailPageProps> = ({
       <div className="mx-auto max-w-3xl py-6">
         <ErrorMessage message="Could not load achievement details. Please try again." />
         <div className="mt-4">
-          <Link to="/achievements" className="text-sm font-medium text-brand-600 hover:underline">
-            ← Back to Achievements
+          <Link to="/achievements" className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-600 hover:underline">
+            <ArrowLeftIcon className="h-4 w-4" />
+            <span>Back to Achievements</span>
           </Link>
         </div>
       </div>
@@ -66,16 +68,18 @@ export const AchievementDetailPage: React.FC<AchievementDetailPageProps> = ({
           <button
             type="button"
             onClick={onBack}
-            className="inline-flex items-center gap-1 text-xs font-medium text-brand-600 hover:text-brand-800"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-brand-600 hover:text-brand-800"
           >
-            ← Back to list
+            <ArrowLeftIcon className="h-3.5 w-3.5" />
+            <span>Back to list</span>
           </button>
         ) : (
           <Link
             to="/achievements"
-            className="inline-flex items-center gap-1 text-xs font-medium text-brand-600 hover:text-brand-800"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-brand-600 hover:text-brand-800"
           >
-            ← Back to Achievements
+            <ArrowLeftIcon className="h-3.5 w-3.5" />
+            <span>Back to Achievements</span>
           </Link>
         )}
       </div>
@@ -154,9 +158,10 @@ export const AchievementDetailPage: React.FC<AchievementDetailPageProps> = ({
                     href={url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="ml-3 rounded bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700 hover:bg-brand-100 flex-shrink-0"
+                    className="ml-3 inline-flex items-center gap-1 rounded bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700 hover:bg-brand-100 flex-shrink-0"
                   >
-                    Open Link ↗
+                    <span>Open Link</span>
+                    <ExternalLinkIcon className="h-3 w-3" />
                   </a>
                 </div>
               ))}

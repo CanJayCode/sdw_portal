@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -7,7 +7,7 @@ import { useMutation } from '@tanstack/react-query';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { login } from '../api';
 import { useAuthStore } from '@/store/auth';
-import { ErrorMessage } from '@/components/ui/Feedback';
+import { UserIcon } from '@/components/ui/Icons';
 
 const schema = z.object({
   prnOrEmail: z.string().min(1, 'PRN or email is required'),
@@ -20,6 +20,9 @@ export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { setSession, setGuestSession, isAuthenticated, isGuest } = useAuthStore();
+  const [authError, setAuthError] = useState<string | null>(
+    () => (location.state?.error as string | undefined) || null
+  );
 
   useEffect(() => {
     if (isAuthenticated && !isGuest) {
@@ -28,22 +31,49 @@ export function LoginPage() {
     }
   }, [isAuthenticated, isGuest, navigate, location.state]);
 
+  useEffect(() => {
+    if (location.state?.error) {
+      setAuthError(location.state.error);
+    }
+  }, [location.state]);
+
   const {
     register,
     handleSubmit,
+    setValue,
+    setFocus,
     formState: { errors },
   } = useForm<FormValues>({ resolver: zodResolver(schema) });
 
   const mutation = useMutation({
     mutationFn: login,
     onSuccess: (data) => {
+      setAuthError(null);
       setSession(data.user, data.auth, data.tokens.accessToken, data.tokens.refreshToken);
       const destination = (location.state?.from?.pathname as string | undefined) || '/dashboard';
       navigate(destination);
     },
+    onError: (error) => {
+      let message = 'wrong password entered';
+      if (axios.isAxiosError(error)) {
+        if (error.code === 'ERR_NETWORK' || !error.response) {
+          message = 'Unable to connect to the backend server. Please make sure the backend is running.';
+        } else {
+          // Status 401, 400, 404 or invalid credentials
+          message = 'wrong password entered';
+        }
+      }
+      setAuthError(message);
+      setValue('password', '');
+      navigate('/login', { replace: true });
+      setTimeout(() => setFocus('password'), 50);
+    },
   });
 
-  const onSubmit = (values: FormValues) => mutation.mutate(values);
+  const onSubmit = (values: FormValues) => {
+    setAuthError(null);
+    mutation.mutate(values);
+  };
 
   const handleGuestLogin = () => {
     setGuestSession();
@@ -72,7 +102,7 @@ export function LoginPage() {
           <input
             {...register('prnOrEmail')}
             className="w-full rounded-md border px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
-            placeholder="STU-2026-001 or you@institution.edu"
+            placeholder="eg. 125B1B333"
           />
           {errors.prnOrEmail && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.prnOrEmail.message}</p>}
         </div>
@@ -89,28 +119,31 @@ export function LoginPage() {
           </div>
           <input
             type="password"
-            {...register('password')}
-            className="w-full rounded-md border px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
+            {...register('password', {
+              onChange: () => {
+                if (authError) setAuthError(null);
+              },
+            })}
+            className={`w-full rounded-md border px-3 py-2 text-sm dark:bg-gray-900 ${
+              authError === 'wrong password entered'
+                ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500 dark:border-red-500'
+                : 'dark:border-gray-700'
+            }`}
           />
-          {errors.password && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.password.message}</p>}
+          {errors.password ? (
+            <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.password.message}</p>
+          ) : authError === 'wrong password entered' ? (
+            <p className="mt-1 text-xs font-medium text-red-600 dark:text-red-400">wrong password entered</p>
+          ) : null}
         </div>
 
-        {mutation.isError && (
-          <ErrorMessage
-            message={
-              axios.isAxiosError(mutation.error)
-                ? (mutation.error.response?.data?.message
-                    ? `${mutation.error.response.data.message}${
-                        Array.isArray(mutation.error.response.data.errors) && mutation.error.response.data.errors.length > 0
-                          ? `: ${mutation.error.response.data.errors.map((e: { message?: string }) => e.message).filter(Boolean).join(', ')}`
-                          : ''
-                      }`
-                    : mutation.error.code === 'ERR_NETWORK' || !mutation.error.response
-                      ? 'Unable to connect to the backend server. Please make sure the backend is running at http://localhost:5000.'
-                      : mutation.error.message)
-                : 'Login failed'
-            }
-          />
+        {authError && (
+          <div
+            role="alert"
+            className="rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600 dark:border-red-900/60 dark:bg-red-950/60 dark:text-red-400"
+          >
+            {authError}
+          </div>
         )}
 
         <button
@@ -139,7 +172,7 @@ export function LoginPage() {
         onClick={handleGuestLogin}
         className="flex w-full items-center justify-center gap-2 rounded-md border border-gray-300 bg-white py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
       >
-        <span>👤</span>
+        <UserIcon className="h-4 w-4" />
         <span>Continue as Guest</span>
       </button>
 

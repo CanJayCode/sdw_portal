@@ -1,4 +1,5 @@
 import type { AchievementStatus as StatusType } from '../types';
+import { CheckIcon, XIcon } from '@/components/ui/Icons';
 
 interface AchievementStatusProps {
   status: StatusType;
@@ -183,7 +184,13 @@ export function AchievementStatus({
                         : 'bg-gray-200 text-gray-500'
                     }`}
                   >
-                    {isStepRejected ? '✕' : isPast ? '✓' : s.step}
+                    {isStepRejected ? (
+                      <XIcon className="h-3.5 w-3.5" />
+                    ) : isPast ? (
+                      <CheckIcon className="h-3.5 w-3.5" />
+                    ) : (
+                      s.step
+                    )}
                   </div>
                   <span
                     className={`mt-1 font-medium ${

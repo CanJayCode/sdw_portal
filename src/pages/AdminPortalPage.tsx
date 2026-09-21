@@ -1,190 +1,203 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import axios from 'axios';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/auth';
 import { canPerformInClub } from '@/lib/permissions';
-import { createEvent, approveEvent, delistEvent, getClubEvents } from '@/features/events/api';
-import type { EventMode } from '@/types/api';
-import { Card, ErrorMessage, Spinner, StatusBadge } from '@/components/ui/Feedback';
+import { getClubById, updateClub } from '@/features/clubs/api';
+import { addWhitelistedPrn, listAdminClubs, listWhitelistedPrns, transferMasterAdmin } from '@/features/admin/api';
+import { approveEvent, createEvent, delistEvent, getClubEvents } from '@/features/events/api';
+import { uploadFile } from '@/features/uploads/api';
+import { Card, ErrorMessage, Spinner } from '@/components/ui/Feedback';
+import type { Club, EventMode, Year } from '@/types/api';
 
-const initialForm = {
-  title: '',
-  description: '',
-  bannerUrl: '',
-  venue: '',
-  mode: 'OFFLINE' as EventMode,
-  startDate: '',
-  endDate: '',
-  registrationDeadline: '',
-  capacity: '50',
-};
-
-const mutationErrorMessage = (error: unknown, fallback: string) => {
+const errorMessage = (error: unknown, fallback: string) => {
   if (!axios.isAxiosError(error)) return fallback;
-  const response = error.response?.data as { message?: string; errors?: Array<{ field?: string; message?: string }> } | undefined;
-  const details = response?.errors?.map((item) => `${item.field}: ${item.message}`).join(', ');
-  return details ? `${response?.message ?? fallback}: ${details}` : response?.message ?? fallback;
+  return (error.response?.data as { message?: string } | undefined)?.message ?? fallback;
 };
+
+const inputClass = 'w-full rounded-md border px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900';
+const initialEventForm = { title: '', description: '', bannerUrl: '', venue: '', mode: 'OFFLINE' as EventMode, startDate: '', endDate: '', registrationDeadline: '', capacity: '50' };
 
 export function AdminPortalPage() {
-  const { auth } = useAuthStore();
+  const { user, auth } = useAuthStore();
   const queryClient = useQueryClient();
-  const memberships = (auth?.memberships ?? []).filter((membership) =>
-    ['CREATE_EVENT', 'EDIT_EVENT', 'DELETE_EVENT_CESA'].some((permission) =>
-      canPerformInClub(auth, membership.clubId, permission)
-    )
+  const isMasterAdmin = user?.isMasterAdmin === true;
+  const clubMemberships = (auth?.memberships ?? []).filter((membership) =>
+    canPerformInClub(auth, membership.clubId, 'EDIT_CLUB') || canPerformInClub(auth, membership.clubId, 'EDIT_CLUB_MEMBERS')
   );
-  const [clubId, setClubId] = useState(memberships[0]?.clubId ?? '');
-  const [form, setForm] = useState(initialForm);
+  const eventMemberships = (auth?.memberships ?? []).filter((membership) =>
+    ['CREATE_EVENT', 'EDIT_EVENT', 'DELETE_EVENT_CESA'].some((permission) => canPerformInClub(auth, membership.clubId, permission))
+  );
+  const adminClubsQuery = useQuery({ queryKey: ['admin', 'clubs'], queryFn: listAdminClubs, enabled: isMasterAdmin });
+  const manageableClubs: Array<Pick<Club, '_id' | 'name' | 'code'>> = isMasterAdmin
+    ? (adminClubsQuery.data ?? []).map(({ _id, name, code }) => ({ _id, name, code }))
+    : clubMemberships.map(({ clubId, clubName, clubCode }) => ({ _id: clubId, name: clubName, code: clubCode }));
+  const [clubId, setClubId] = useState('');
+  const [clubForm, setClubForm] = useState({ description: '', logoUrl: '', bannerUrl: '' });
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [eventForm, setEventForm] = useState(initialEventForm);
+  const [prnForm, setPrnForm] = useState({ prn: '', name: '', email: '', branch: '', year: 'FE' as Year });
+  const [newMasterUserId, setNewMasterUserId] = useState('');
   const [message, setMessage] = useState('');
 
-  const canCreate = clubId ? canPerformInClub(auth, clubId, 'CREATE_EVENT') : false;
-  const canApprove = clubId ? canPerformInClub(auth, clubId, 'EDIT_EVENT') : false;
-  const canDelist = clubId ? canPerformInClub(auth, clubId, 'DELETE_EVENT_CESA') : false;
-  const canManageSelectedClub = canCreate || canApprove || canDelist;
+  useEffect(() => {
+    if (!manageableClubs.some((club) => club._id === clubId)) setClubId(manageableClubs[0]?._id ?? '');
+  }, [clubId, manageableClubs]);
 
+  const selectedClubQuery = useQuery({
+    queryKey: ['admin', 'club', clubId],
+    queryFn: () => getClubById(clubId),
+    enabled: Boolean(clubId),
+  });
+  const selectedClub = selectedClubQuery.data?.club;
+  useEffect(() => {
+    if (selectedClub) setClubForm({ description: selectedClub.description, logoUrl: selectedClub.logoUrl, bannerUrl: selectedClub.bannerUrl ?? '' });
+  }, [selectedClub]);
+
+  const canCreateEvent = canPerformInClub(auth, clubId, 'CREATE_EVENT');
+  const canApproveEvent = canPerformInClub(auth, clubId, 'EDIT_EVENT');
+  const canDelistEvent = canPerformInClub(auth, clubId, 'DELETE_EVENT_CESA');
   const eventsQuery = useQuery({
     queryKey: ['admin', 'events', clubId],
     queryFn: () => getClubEvents(clubId, { limit: 50 }),
-    enabled: Boolean(clubId) && canManageSelectedClub,
+    enabled: Boolean(clubId) && (canCreateEvent || canApproveEvent || canDelistEvent),
   });
 
-  const refreshEvents = () => {
-    queryClient.invalidateQueries({ queryKey: ['admin', 'events', clubId] });
-    queryClient.invalidateQueries({ queryKey: ['events'] });
-    queryClient.invalidateQueries({ queryKey: ['dashboard'] });
-  };
-
-  const createMutation = useMutation({
-    mutationFn: () =>
-      createEvent(clubId, {
-        title: form.title,
-        description: form.description,
-        bannerUrl: form.bannerUrl,
-        venue: form.venue,
-        mode: form.mode,
-        startDate: new Date(form.startDate).toISOString(),
-        endDate: new Date(form.endDate).toISOString(),
-        registrationDeadline: new Date(form.registrationDeadline).toISOString(),
-        capacity: Number(form.capacity),
-      }),
+  const clubMutation = useMutation({
+    mutationFn: async () => {
+      const [logoUpload, bannerUpload] = await Promise.all([
+        logoFile ? uploadFile(logoFile, 'cesa/clubs/logos') : null,
+        bannerFile ? uploadFile(bannerFile, 'cesa/clubs/banners') : null,
+      ]);
+      return updateClub(clubId, {
+        ...clubForm,
+        logoUrl: logoUpload?.secure_url ?? clubForm.logoUrl,
+        bannerUrl: bannerUpload?.secure_url ?? clubForm.bannerUrl,
+      });
+    },
     onSuccess: () => {
-      setForm(initialForm);
-      setMessage('Activity created and sent through the club approval workflow.');
-      refreshEvents();
+      setLogoFile(null);
+      setBannerFile(null);
+      setMessage('Club branding updated successfully.');
+      queryClient.invalidateQueries({ queryKey: ['admin'] });
+      queryClient.invalidateQueries({ queryKey: ['clubs'] });
     },
   });
-
-  const approveMutation = useMutation({
+  const prnMutation = useMutation({
+    mutationFn: () => addWhitelistedPrn(prnForm),
+    onSuccess: () => {
+      setPrnForm({ prn: '', name: '', email: '', branch: '', year: 'FE' });
+      setMessage('PRN added to the whitelist.');
+      queryClient.invalidateQueries({ queryKey: ['admin', 'prns'] });
+    },
+  });
+  const transferMutation = useMutation({
+    mutationFn: () => transferMasterAdmin(newMasterUserId),
+    onSuccess: () => { setNewMasterUserId(''); setMessage('Master admin role transfer requested.'); },
+  });
+  const createEventMutation = useMutation({
+    mutationFn: () => createEvent(clubId, {
+      title: eventForm.title,
+      description: eventForm.description,
+      bannerUrl: eventForm.bannerUrl,
+      venue: eventForm.venue,
+      mode: eventForm.mode,
+      startDate: new Date(eventForm.startDate).toISOString(),
+      endDate: new Date(eventForm.endDate).toISOString(),
+      registrationDeadline: new Date(eventForm.registrationDeadline).toISOString(),
+      capacity: Number(eventForm.capacity),
+    }),
+    onSuccess: () => { setEventForm(initialEventForm); setMessage('Activity created successfully.'); queryClient.invalidateQueries({ queryKey: ['admin', 'events', clubId] }); },
+  });
+  const approveEventMutation = useMutation({
     mutationFn: (eventId: string) => approveEvent(clubId, eventId),
-    onSuccess: () => {
-      setMessage('Activity approved and published.');
-      refreshEvents();
-    },
+    onSuccess: () => { setMessage('Activity approved and published.'); queryClient.invalidateQueries({ queryKey: ['admin', 'events', clubId] }); },
   });
-
-  const delistMutation = useMutation({
+  const delistEventMutation = useMutation({
     mutationFn: (eventId: string) => delistEvent(clubId, eventId, 'Removed by club administrator.'),
-    onSuccess: () => {
-      setMessage('Activity delisted and registrations were handled by the server.');
-      refreshEvents();
-    },
+    onSuccess: () => { setMessage('Activity delisted successfully.'); queryClient.invalidateQueries({ queryKey: ['admin', 'events', clubId] }); },
   });
 
-  const submit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setMessage('');
-    createMutation.mutate();
-  };
-
-  if (memberships.length === 0) {
-    return (
-      <Card>
-        <h1 className="text-xl font-bold">Club management</h1>
-        <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
-          Your account does not have permission to manage club activities.
-        </p>
-      </Card>
-    );
+  if (!isMasterAdmin && clubMemberships.length === 0 && eventMemberships.length === 0) {
+    return <Card><h1 className="text-xl font-bold">Admin access required</h1><p className="mt-2 text-sm text-gray-600 dark:text-gray-300">Your account cannot manage any club settings.</p></Card>;
   }
 
   return (
     <div className="space-y-8">
-      <div>
-        <p className="text-sm font-medium text-brand-600 dark:text-brand-400">Admin portal</p>
-        <h1 className="mt-1 text-2xl font-bold">Club activity management</h1>
-        <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
-          Create and review activities for clubs where your role grants access.
-        </p>
-      </div>
-
-      <div className="max-w-sm">
-        <label className="mb-1 block text-sm font-medium" htmlFor="managed-club">Managed club</label>
-        <select
-          id="managed-club"
-          value={clubId}
-          onChange={(event) => setClubId(event.target.value)}
-          className="w-full rounded-md border bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
-        >
-          {memberships.map((membership) => (
-            <option key={membership.clubId} value={membership.clubId}>{membership.clubName}</option>
-          ))}
-        </select>
-      </div>
+      <header>
+        <p className="text-sm font-medium text-brand-600 dark:text-brand-400">Administration</p>
+        <h1 className="mt-1 text-2xl font-bold">{isMasterAdmin ? 'Master admin panel' : 'Club admin panel'}</h1>
+        <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">Club admins can edit branding only for clubs assigned to them. Master admins can manage the full club registry.</p>
+      </header>
 
       {message && <p className="rounded-md bg-green-50 px-4 py-3 text-sm text-green-700 dark:bg-green-950 dark:text-green-300">{message}</p>}
-      {createMutation.isError && <ErrorMessage message={mutationErrorMessage(createMutation.error, 'The activity could not be created.')} />}
-      {approveMutation.isError && <ErrorMessage message={mutationErrorMessage(approveMutation.error, 'The activity could not be approved.')} />}
-      {delistMutation.isError && <ErrorMessage message={mutationErrorMessage(delistMutation.error, 'The activity could not be delisted.')} />}
+      {clubMutation.isError && <ErrorMessage message={errorMessage(clubMutation.error, 'Club branding could not be updated.')} />}
+      {prnMutation.isError && <ErrorMessage message={errorMessage(prnMutation.error, 'The PRN could not be added.')} />}
+      {transferMutation.isError && <ErrorMessage message={errorMessage(transferMutation.error, 'The master admin role could not be transferred.')} />}
 
-      {canCreate && (
+      <Card>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div><h2 className="text-lg font-bold">Club branding</h2><p className="mt-1 text-sm text-gray-600 dark:text-gray-300">Logo, description, and banner updates are scoped to the selected club.</p></div>
+          <label className="w-full sm:max-w-xs"><span className="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Managed club</span><select value={clubId} onChange={(event) => setClubId(event.target.value)} className={inputClass}>{manageableClubs.map((club) => <option key={club._id} value={club._id}>{club.name} ({club.code})</option>)}</select></label>
+        </div>
+        {selectedClubQuery.isLoading && <Spinner />}
+        {selectedClubQuery.isError && <ErrorMessage message="Failed to load the selected club." />}
+        {selectedClub && <form onSubmit={(event: FormEvent<HTMLFormElement>) => { event.preventDefault(); clubMutation.mutate(); }} className="mt-6 grid gap-4 border-t border-gray-200 pt-6 dark:border-gray-800 sm:grid-cols-2">
+          <label className="text-sm sm:col-span-2">Description<textarea required value={clubForm.description} onChange={(event) => setClubForm({ ...clubForm, description: event.target.value })} className={`${inputClass} mt-1 min-h-28`} /></label>
+          <label className="text-sm">Logo URL<input type="url" value={clubForm.logoUrl} onChange={(event) => setClubForm({ ...clubForm, logoUrl: event.target.value })} placeholder="https://..." className={`${inputClass} mt-1`} /></label>
+          <label className="text-sm">Banner URL<input type="url" value={clubForm.bannerUrl} onChange={(event) => setClubForm({ ...clubForm, bannerUrl: event.target.value })} placeholder="https://..." className={`${inputClass} mt-1`} /></label>
+          <label className="text-sm">Or upload logo<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => setLogoFile(event.target.files?.[0] ?? null)} className={`${inputClass} mt-1`} /></label>
+          <label className="text-sm">Or upload banner<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => setBannerFile(event.target.files?.[0] ?? null)} className={`${inputClass} mt-1`} /></label>
+          <button type="submit" disabled={clubMutation.isPending} className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50 sm:col-span-2">{clubMutation.isPending ? 'Saving...' : 'Save club branding'}</button>
+        </form>}
+      </Card>
+
+      {isMasterAdmin && <section className="grid gap-6 lg:grid-cols-2">
         <Card>
-          <h2 className="text-lg font-bold">Create an activity</h2>
-          <form onSubmit={submit} className="mt-4 grid gap-4 sm:grid-cols-2">
-            <input required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Activity title" className="rounded-md border px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900" />
-            <input required value={form.venue} onChange={(e) => setForm({ ...form, venue: e.target.value })} placeholder="Venue or meeting link" className="rounded-md border px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900" />
-            <input type="url" value={form.bannerUrl} onChange={(e) => setForm({ ...form, bannerUrl: e.target.value })} placeholder="Banner image URL (optional)" className="rounded-md border px-3 py-2 text-sm sm:col-span-2 dark:border-gray-700 dark:bg-gray-900" />
-            <textarea required value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Description" className="min-h-24 rounded-md border px-3 py-2 text-sm sm:col-span-2 dark:border-gray-700 dark:bg-gray-900" />
-            <select value={form.mode} onChange={(e) => setForm({ ...form, mode: e.target.value as EventMode })} className="rounded-md border px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900">
-              <option value="OFFLINE">Offline</option>
-              <option value="ONLINE">Online</option>
-              <option value="HYBRID">Hybrid</option>
-            </select>
-            <input required min="1" type="number" value={form.capacity} onChange={(e) => setForm({ ...form, capacity: e.target.value })} placeholder="Capacity" className="rounded-md border px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900" />
-            <label className="text-sm">Starts<input required type="datetime-local" value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })} className="mt-1 w-full rounded-md border px-3 py-2 dark:border-gray-700 dark:bg-gray-900" /></label>
-            <label className="text-sm">Ends<input required type="datetime-local" value={form.endDate} onChange={(e) => setForm({ ...form, endDate: e.target.value })} className="mt-1 w-full rounded-md border px-3 py-2 dark:border-gray-700 dark:bg-gray-900" /></label>
-            <label className="text-sm sm:col-span-2">Registration deadline<input required type="datetime-local" value={form.registrationDeadline} onChange={(e) => setForm({ ...form, registrationDeadline: e.target.value })} className="mt-1 w-full rounded-md border px-3 py-2 dark:border-gray-700 dark:bg-gray-900" /></label>
-            <button disabled={createMutation.isPending} className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50 sm:col-span-2">{createMutation.isPending ? 'Creating...' : 'Create activity'}</button>
+          <h2 className="text-lg font-bold">Master controls</h2>
+          <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">Whitelist students and transfer the single master admin role.</p>
+          <form onSubmit={(event) => { event.preventDefault(); prnMutation.mutate(); }} className="mt-5 grid gap-3 sm:grid-cols-2">
+            <input required value={prnForm.prn} onChange={(event) => setPrnForm({ ...prnForm, prn: event.target.value })} placeholder="PRN" className={inputClass} />
+            <input required value={prnForm.name} onChange={(event) => setPrnForm({ ...prnForm, name: event.target.value })} placeholder="Student name" className={inputClass} />
+            <input type="email" value={prnForm.email} onChange={(event) => setPrnForm({ ...prnForm, email: event.target.value })} placeholder="Institutional email" className={inputClass} />
+            <input value={prnForm.branch} onChange={(event) => setPrnForm({ ...prnForm, branch: event.target.value })} placeholder="Branch" className={inputClass} />
+            <select value={prnForm.year} onChange={(event) => setPrnForm({ ...prnForm, year: event.target.value as Year })} className={inputClass}><option>FE</option><option>SE</option><option>TE</option><option>BE</option></select>
+            <button disabled={prnMutation.isPending} className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50">{prnMutation.isPending ? 'Adding...' : 'Add PRN'}</button>
+          </form>
+          <form onSubmit={(event) => { event.preventDefault(); transferMutation.mutate(); }} className="mt-6 border-t border-gray-200 pt-5 dark:border-gray-800">
+            <label className="text-sm">Transfer master admin to user ID<input required value={newMasterUserId} onChange={(event) => setNewMasterUserId(event.target.value)} placeholder="User ObjectId" className={`${inputClass} mt-1`} /></label>
+            <button disabled={transferMutation.isPending} className="mt-3 rounded-md border border-red-300 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950">{transferMutation.isPending ? 'Transferring...' : 'Transfer role'}</button>
           </form>
         </Card>
-      )}
+        <Card><h2 className="text-lg font-bold">Master-admin registry</h2><p className="mt-2 text-sm text-gray-600 dark:text-gray-300">Managed clubs loaded: {adminClubsQuery.data?.length ?? 0}.</p><PrnList /></Card>
+      </section>}
 
-      <section>
-        <h2 className="mb-4 text-lg font-bold">Activities</h2>
+      {(canCreateEvent || canApproveEvent || canDelistEvent) && <section>
+        <h2 className="mb-4 text-lg font-bold">Activity management</h2>
+        {canCreateEvent && <Card><form onSubmit={(event) => { event.preventDefault(); createEventMutation.mutate(); }} className="grid gap-4 sm:grid-cols-2">
+          <input required value={eventForm.title} onChange={(event) => setEventForm({ ...eventForm, title: event.target.value })} placeholder="Activity title" className={inputClass} />
+          <input required value={eventForm.venue} onChange={(event) => setEventForm({ ...eventForm, venue: event.target.value })} placeholder="Venue or meeting link" className={inputClass} />
+          <input type="url" value={eventForm.bannerUrl} onChange={(event) => setEventForm({ ...eventForm, bannerUrl: event.target.value })} placeholder="Banner image URL" className={`${inputClass} sm:col-span-2`} />
+          <textarea required value={eventForm.description} onChange={(event) => setEventForm({ ...eventForm, description: event.target.value })} placeholder="Description" className={`${inputClass} min-h-24 sm:col-span-2`} />
+          <select value={eventForm.mode} onChange={(event) => setEventForm({ ...eventForm, mode: event.target.value as EventMode })} className={inputClass}><option value="OFFLINE">Offline</option><option value="ONLINE">Online</option><option value="HYBRID">Hybrid</option></select>
+          <input required min="1" type="number" value={eventForm.capacity} onChange={(event) => setEventForm({ ...eventForm, capacity: event.target.value })} placeholder="Capacity" className={inputClass} />
+          <label className="text-sm">Starts<input required type="datetime-local" value={eventForm.startDate} onChange={(event) => setEventForm({ ...eventForm, startDate: event.target.value })} className={`${inputClass} mt-1`} /></label>
+          <label className="text-sm">Ends<input required type="datetime-local" value={eventForm.endDate} onChange={(event) => setEventForm({ ...eventForm, endDate: event.target.value })} className={`${inputClass} mt-1`} /></label>
+          <label className="text-sm sm:col-span-2">Registration deadline<input required type="datetime-local" value={eventForm.registrationDeadline} onChange={(event) => setEventForm({ ...eventForm, registrationDeadline: event.target.value })} className={`${inputClass} mt-1`} /></label>
+          <button disabled={createEventMutation.isPending} className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 sm:col-span-2">{createEventMutation.isPending ? 'Creating...' : 'Create activity'}</button>
+        </form></Card>}
         {eventsQuery.isLoading && <Spinner />}
         {eventsQuery.isError && <ErrorMessage message="Failed to load club activities." />}
-        <div className="space-y-3">
-          {eventsQuery.data?.events.map((event) => (
-            <Card key={event._id} className="flex flex-wrap items-center justify-between gap-4">
-              <div>
-                <p className="font-semibold">{event.title}</p>
-                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{new Date(event.startDate).toLocaleString()}</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <StatusBadge status={event.status} />
-                {canApprove && event.status === 'PENDING_APPROVAL' && <button onClick={() => approveMutation.mutate(event._id)} className="rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700">Approve</button>}
-                {canDelist && event.status === 'PUBLISHED' && <button onClick={() => delistMutation.mutate(event._id)} className="rounded-md border border-red-300 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950">Delist</button>}
-              </div>
-            </Card>
-          ))}
-        </div>
-        <p className="mt-4 rounded-md bg-amber-50 px-4 py-3 text-xs text-amber-800 dark:bg-amber-950 dark:text-amber-200">
-          Editing is not available because the current backend does not expose an event update endpoint. Create, approve, and delist actions remain available.
-        </p>
-        <p className="mt-3 rounded-md bg-blue-50 px-4 py-3 text-xs text-blue-800 dark:bg-blue-950 dark:text-blue-200">
-          Attendee registration details will appear here after the backend provides a club-scoped registrations endpoint.
-        </p>
-      </section>
+        <div className="mt-4 space-y-3">{eventsQuery.data?.events.map((event) => <Card key={event._id} className="flex flex-wrap items-center justify-between gap-4"><div><p className="font-semibold">{event.title}</p><p className="text-sm text-gray-500">{new Date(event.startDate).toLocaleString()}</p></div><div className="flex items-center gap-3"><span className="rounded-md bg-gray-100 px-2 py-1 text-xs dark:bg-gray-800">{event.status}</span>{canApproveEvent && event.status === 'PENDING_APPROVAL' && <button onClick={() => approveEventMutation.mutate(event._id)} className="rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white">Approve</button>}{canDelistEvent && event.status === 'PUBLISHED' && <button onClick={() => delistEventMutation.mutate(event._id)} className="rounded-md border border-red-300 px-3 py-1.5 text-xs font-medium text-red-700">Delist</button>}</div></Card>)}</div>
+      </section>}
     </div>
   );
+}
+
+function PrnList() {
+  const query = useQuery({ queryKey: ['admin', 'prns'], queryFn: () => listWhitelistedPrns({ limit: 10 }) });
+  if (query.isLoading) return <Spinner />;
+  if (query.isError) return <ErrorMessage message="Failed to load whitelisted PRNs." />;
+  return <div className="mt-5 space-y-2">{query.data?.items.map((item) => <div key={item._id} className="flex items-center justify-between rounded-md border px-3 py-2 text-sm dark:border-gray-700"><span>{item.prn}<span className="ml-2 text-gray-500">{item.name}</span></span><span className="text-xs text-gray-500">{item.isRegistered ? 'Registered' : 'Pending'}</span></div>)}</div>;
 }

@@ -65,12 +65,17 @@ export type Year = 'FE' | 'SE' | 'TE' | 'BE';
 
 export interface User {
   id: string;
+  _id?: string;
   prn: string;
   email: string;
   name: string;
   branch: string;
   year: Year;
-  avatar: string;
+  avatar?: string;
+  profilePicture?: string;
+  cardBackground?: string;
+  isMasterAdmin?: boolean;
+  role?: string;
   isActive?: boolean;
   createdAt?: string;
 }
@@ -114,6 +119,7 @@ export interface Club {
   name: string;
   description: string;
   logoUrl: string;
+  bannerUrl?: string;
   isCoordinator: boolean;
   isActive: boolean;
 }

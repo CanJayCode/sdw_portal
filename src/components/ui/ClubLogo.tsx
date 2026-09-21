@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import type { ClubCode } from '@/types/api';
+import { AcmLogo, AcmwLogo, GdgcLogo, LfdtLogo, OwaspLogo } from './Icons';
 
 type ClubLike = {
   code?: ClubCode | string;
@@ -23,15 +25,28 @@ const initialsFor = (club: ClubLike) => {
 };
 
 export function ClubLogo({ club, size = 'md' }: { club: ClubLike; size?: keyof typeof sizeClasses }) {
-  const initials = initialsFor(club);
+  const [imageFailed, setImageFailed] = useState(false);
 
-  return club.logoUrl ? (
-    <img
-      src={club.logoUrl}
-      alt={`${club.name ?? club.code ?? 'Club'} logo`}
-      className={`${sizeClasses[size]} shrink-0 rounded-full border border-white/10 object-cover`}
-    />
-  ) : (
+  if (club.logoUrl && !imageFailed) {
+    return (
+      <img
+        src={club.logoUrl}
+        alt={`${club.name ?? club.code ?? 'Club'} logo`}
+        onError={() => setImageFailed(true)}
+        className={`${sizeClasses[size]} shrink-0 rounded-full border border-white/10 object-cover`}
+      />
+    );
+  }
+
+  const code = (club.code || '').toUpperCase();
+  if (code === 'ACM') return <AcmLogo className={`${sizeClasses[size]} shrink-0`} />;
+  if (code === 'OWASP') return <OwaspLogo className={`${sizeClasses[size]} shrink-0`} />;
+  if (code === 'GDGC') return <GdgcLogo className={`${sizeClasses[size]} shrink-0`} />;
+  if (code === 'LFDT') return <LfdtLogo className={`${sizeClasses[size]} shrink-0`} />;
+  if (code === 'ACM-W') return <AcmwLogo className={`${sizeClasses[size]} shrink-0`} />;
+
+  const initials = initialsFor(club);
+  return (
     <span
       aria-label={`${club.name ?? club.code ?? 'Club'} logo`}
       className={`${sizeClasses[size]} flex shrink-0 items-center justify-center rounded-full border border-brand-400/30 bg-brand-500/15 font-bold text-brand-300`}

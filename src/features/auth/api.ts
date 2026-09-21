@@ -30,6 +30,12 @@ interface SessionData {
   tokens: Tokens;
 }
 
+export interface UserProfileResponse {
+  user: User;
+  auth: AuthInfo;
+  memberships?: AuthInfo['memberships'];
+}
+
 export const registerStudent = (payload: RegisterPayload) =>
   api.post<ApiResponse<SessionData>>('/auth/register', payload).then((r) => r.data.data);
 
@@ -43,6 +49,36 @@ export const getMe = () =>
   api
     .get<ApiResponse<{ user: User; auth: AuthInfo }>>('/auth/me')
     .then((r) => r.data.data);
+
+export const getUserProfile = () =>
+  api.get<ApiResponse<UserProfileResponse>>('/users/me').then((r) => r.data.data);
+
+export interface UpdateUserProfilePayload {
+  name?: string;
+  branch?: string;
+  year?: Year;
+  profilePicture?: string;
+  cardBackground?: string;
+}
+
+export const updateUserProfile = (payload: UpdateUserProfilePayload) =>
+  api.patch<ApiResponse<UserProfileResponse>>('/users/me', payload).then((r) => r.data.data);
+
+export const updateProfilePicture = (profilePicture: string) =>
+  api
+    .patch<ApiResponse<UserProfileResponse>>('/users/me/profile-picture', { profilePicture })
+    .then((r) => r.data.data);
+
+export const removeProfilePicture = () =>
+  api.delete<ApiResponse<UserProfileResponse>>('/users/me/profile-picture').then((r) => r.data.data);
+
+export const updateCardBackground = (cardBackground: string) =>
+  api
+    .patch<ApiResponse<UserProfileResponse>>('/users/me/card-background', { cardBackground })
+    .then((r) => r.data.data);
+
+export const removeCardBackground = () =>
+  api.delete<ApiResponse<UserProfileResponse>>('/users/me/card-background').then((r) => r.data.data);
 
 export const forgotPassword = async (payload: ForgotPasswordPayload): Promise<ForgotPasswordResponse> => {
   try {

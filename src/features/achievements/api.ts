@@ -61,6 +61,19 @@ export const getReviewQueue = (params: GetReviewQueueParams = {}) =>
 export const getAchievementById = (id: string) =>
   api.get<ApiResponse<Achievement>>(`/achievements/${id}`).then((r) => r.data.data);
 
+export interface PublicAchievementsParams {
+  semesterId?: string;
+  achievementTypeId?: string;
+  studentId?: string;
+  page?: number;
+  limit?: number;
+}
+
+export const getPublicAchievements = (params: PublicAchievementsParams = {}) =>
+  api
+    .get<ApiResponse<Achievement[]>>('/achievements/public', { params })
+    .then((r) => ({ achievements: r.data.data, meta: r.data.meta as PaginationMeta }));
+
 /**
  * 6. Step 3: Documentation Review (ACM Doc Member Only)
  * PATCH /achievements/:id/review
